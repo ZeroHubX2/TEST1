@@ -909,7 +909,7 @@ local Library = (function()
 
     Lib.Folder = "ZeroX UI"
     Lib.Name = "ZeroX UI"
-    Lib.Version = "4.8"
+    Lib.Version = "4.9"
     Lib.AutoSave = false
     local function fsOk() return writefile and readfile and isfile end
     function Lib:EnsureFolder(path)
@@ -1105,7 +1105,7 @@ local Library = (function()
         if cfg.Wordmark then
             wm = inst("ImageLabel", {
                 Name = "Wordmark", BackgroundTransparency = 1, Image = tostring(cfg.Wordmark), ScaleType = Enum.ScaleType.Fit,
-                Size = UDim2.fromOffset(math.floor((tonumber(cfg.WordmarkHeight) or 36) * (tonumber(cfg.WordmarkAspect) or 3) + 0.5), tonumber(cfg.WordmarkHeight) or 36), LayoutOrder = 1,
+                Size = UDim2.fromOffset(math.floor((tonumber(cfg.WordmarkHeight) or 40) * (tonumber(cfg.WordmarkAspect) or 3) + 0.5), tonumber(cfg.WordmarkHeight) or 40), LayoutOrder = 1,
             }, brand)
             task.spawn(function()
                 local t = 0
