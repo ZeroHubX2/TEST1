@@ -281,12 +281,12 @@ local Library = (function()
     end)
     Lib.SoundOn = true
     Lib.Volume = 0.5
+    local BUBBLE = "rbxassetid://6895079853"
     local SFX = {
-        click = "rbxassetid://17208396156", tab = "rbxassetid://17208408337", on = "rbxassetid://15675055424",
-        off = "rbxassetid://15675032796", tick = "rbxasset://sounds/volume_slider.ogg", open = "rbxassetid://17208405682",
-        select = "rbxassetid://15675059323", notify = "rbxassetid://17208361335", alert = "rbxassetid://17208372272",
-        flip = "rbxassetid://15675037413", bookOpen = "rbxassetid://15675024286", bookClose = "rbxassetid://9118833191",
-        copy = "rbxassetid://17208399163",
+        click = { BUBBLE, 1.12 }, tab = { BUBBLE, 1.28 }, on = { BUBBLE, 1.45 }, off = { BUBBLE, 0.86 },
+        tick = { BUBBLE, 1.7, 0.45 }, open = { BUBBLE, 1.0 }, select = { BUBBLE, 1.2 }, alert = { BUBBLE, 0.72, 1.2 },
+        copy = { BUBBLE, 1.55 }, notify = { BUBBLE, 1.3 }, notify2 = { BUBBLE, 1.62 },
+        flip = { "rbxassetid://15675037413", 1 }, bookOpen = { "rbxassetid://15675024286", 1 }, bookClose = { "rbxassetid://9118833191", 1 },
     }
     local sfxCache, sfxLast = {}, {}
     local sfxFolder
@@ -297,8 +297,8 @@ local Library = (function()
     end)
     local function sfx(key, vol)
         if not Lib.SoundOn or Lib.Unloaded then return end
-        local id = SFX[key]
-        if not id then return end
+        local def = SFX[key]
+        if not def then return end
         local now = os.clock()
         if sfxLast[key] and now - sfxLast[key] < 0.05 then return end
         sfxLast[key] = now
@@ -307,11 +307,12 @@ local Library = (function()
             if not snd then
                 snd = Instance.new("Sound")
                 snd.Name = key
-                snd.SoundId = id
+                snd.SoundId = def[1]
+                snd.PlaybackSpeed = def[2] or 1
                 snd.Parent = sfxFolder or game:GetService("SoundService")
                 sfxCache[key] = snd
             end
-            snd.Volume = math.clamp((tonumber(Lib.Volume) or 0.5) * (vol or 1), 0, 3)
+            snd.Volume = math.clamp((tonumber(Lib.Volume) or 0.5) * (vol or 1) * (def[3] or 1) * 1.6, 0, 3)
             game:GetService("SoundService"):PlayLocalSound(snd)
         end)
     end
@@ -838,7 +839,7 @@ local Library = (function()
 
     Lib.Folder = "ZeroX UI"
     Lib.Name = "ZeroX UI"
-    Lib.Version = "3.8"
+    Lib.Version = "3.9"
     Lib.AutoSave = false
     local function fsOk() return writefile and readfile and isfile end
     function Lib:EnsureFolder(path)
@@ -3648,7 +3649,8 @@ local Library = (function()
     }, top)
     list(banners, nil, 8, Enum.HorizontalAlignment.Center)
     function Lib:Notify(ncfg)
-        sfx("notify", 0.8)
+        sfx("notify", 0.9)
+        task.delay(0.09, function() sfx("notify2", 0.8) end)
         pcall(function()
             local vp = viewport()
             local BW = math.min(360, vp.X - 24)
