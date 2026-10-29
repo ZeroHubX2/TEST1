@@ -909,7 +909,7 @@ local Library = (function()
 
     Lib.Folder = "ZeroX UI"
     Lib.Name = "ZeroX UI"
-    Lib.Version = "4.5"
+    Lib.Version = "4.6"
     Lib.AutoSave = false
     local function fsOk() return writefile and readfile and isfile end
     function Lib:EnsureFolder(path)
@@ -4041,50 +4041,7 @@ local Library = (function()
         end
         if cfg.Welcome ~= false then
             body.Visible = false
-            Lib.Changelog = Lib.Changelog or {
-                "Removed the floating status bar for a cleaner screen",
-                "Fixed the card layout from v4.3",
-                "7 themes with live color morph: Crimson, Midnight, Neon Cyber, Gold Royal, Sakura, Toxic, Mono",
-                "Aurora background and a light that follows your mouse on cards",
-                "Rolling numbers on the live stat tiles",
-                "Hold-to-confirm on dangerous buttons",
-                "Color picker, segmented buttons and saved profiles",
-                "Mini mode: keep only your key switches on screen",
-                "Swipe notifications away",
-            }
-            local function changelog()
-                local seenPath = Lib:Path("ui_seen.txt")
-                local seen = ""
-                pcall(function() if isfile(seenPath) then seen = readfile(seenPath) end end)
-                if seen == tostring(Lib.Version) then return end
-                pcall(function()
-                    Lib:EnsureFolder()
-                    writefile(seenPath, tostring(Lib.Version))
-                end)
-                task.delay(0.8, function()
-                    local f = openPopup(nil, 420, 120 + #Lib.Changelog * 30)
-                    f.ClipsDescendants = true
-                    sfx("notify", 0.8)
-                    text({ Text = "WHAT'S NEW", FontFace = F.Bold, TextSize = 11, TextColor3 = accent(), Position = UDim2.fromOffset(22, 18), Size = UDim2.new(1, -44, 0, 14), ZIndex = 52 }, f)
-                    text({ Text = Lib.Name .. " UI  v" .. tostring(Lib.Version), FontFace = F.Bold, TextSize = 19, Position = UDim2.fromOffset(22, 34), Size = UDim2.new(1, -44, 0, 24), ZIndex = 52 }, f)
-                    for i, line in ipairs(Lib.Changelog) do
-                        local y = 68 + (i - 1) * 30
-                        local d = inst("Frame", { BackgroundColor3 = accent(), BorderSizePixel = 0, Position = UDim2.fromOffset(24, y + 8), Size = UDim2.fromOffset(6, 6), ZIndex = 52 }, f)
-                        round(d)
-                        local l = text({ Text = tostring(line), FontFace = F.Med, TextSize = 13, TextColor3 = C.Sub, TextWrapped = true, Position = UDim2.fromOffset(40, y), Size = UDim2.new(1, -62, 0, 26), ZIndex = 52 }, f)
-                        if Lib.FX then
-                            l.TextTransparency = 1
-                            task.delay(0.1 + i * 0.05, function() ease(l, 0.35, { TextTransparency = 0 }) end)
-                        end
-                    end
-                    local okB = makeButton(f, "Got it", closePopup, accent())
-                    okB.AnchorPoint = Vector2.new(1, 1)
-                    okB.Position = UDim2.new(1, -18, 1, -16)
-                    okB.ZIndex = 52
-                end)
-            end
             welcome(function()
-                task.delay(1.6, changelog)
                 body.Visible = true
                 if Lib.FX then Lib._fold(true) end
             end)
