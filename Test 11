@@ -840,7 +840,7 @@ local Library = (function()
 
     Lib.Folder = "ZeroX UI"
     Lib.Name = "ZeroX UI"
-    Lib.Version = "4.1"
+    Lib.Version = "4.2"
     Lib.AutoSave = false
     local function fsOk() return writefile and readfile and isfile end
     function Lib:EnsureFolder(path)
@@ -3439,10 +3439,14 @@ local Library = (function()
             local cx, cy = p.X.Scale * vp.X + p.X.Offset, p.Y.Scale * vp.Y + p.Y.Offset
             local left = cx - w / 2
             local col = accent()
-            local cover = inst("Frame", {
-                Name = "BookCover", BackgroundColor3 = Color3.fromRGB(13, 12, 15), BorderSizePixel = 0, AnchorPoint = Vector2.new(0, 0.5),
+            local coverHold = inst("Frame", {
+                Name = "BookCover", BackgroundTransparency = 1, BorderSizePixel = 0, AnchorPoint = Vector2.new(0, 0.5),
                 Position = UDim2.fromOffset(left, cy), Size = UDim2.fromOffset(w, h), ZIndex = 5, ClipsDescendants = true,
             }, gui)
+            local cover = inst("Frame", {
+                Name = "Sheet", BackgroundColor3 = Color3.fromRGB(13, 12, 15), BorderSizePixel = 0,
+                Position = UDim2.fromOffset(0, 0), Size = UDim2.fromOffset(w, h), ZIndex = 5, ClipsDescendants = true,
+            }, coverHold)
             local rad = math.floor(18 * sc + 0.5)
             round(cover, rad)
             local cl = stroke(cover, 0.35)
@@ -3562,7 +3566,7 @@ local Library = (function()
             local function finish()
                 if finished then return end
                 finished = true
-                pcall(function() cover:Destroy() end)
+                pcall(function() coverHold:Destroy() end)
                 pcall(function() edgeShadow:Destroy() end)
                 Lib._animWin = false
                 fit.Scale = Lib._baseScale or sc
@@ -3571,11 +3575,11 @@ local Library = (function()
             end
             local turn = 0.62
             local function flip(toW, dur, dir)
-                ease(cover, dur, { Size = UDim2.fromOffset(toW, h) }, Enum.EasingStyle.Quart, dir)
+                ease(coverHold, dur, { Size = UDim2.fromOffset(toW, h) }, Enum.EasingStyle.Quart, dir)
                 ease(edgeShadow, dur, { Position = UDim2.fromOffset(left + toW, cy) }, Enum.EasingStyle.Quart, dir)
             end
             if open then
-                local cs = inst("UIScale", { Scale = 0.92 }, cover)
+                local cs = inst("UIScale", { Scale = 0.92 }, coverHold)
                 fit.Scale = sc * 0.96
                 ease(cs, 0.3, { Scale = 1 }, Enum.EasingStyle.Back)
                 if mark:IsA("ImageLabel") then
@@ -3606,7 +3610,7 @@ local Library = (function()
                     task.delay(turn + 0.05, finish)
                 end)
             else
-                cover.Size = UDim2.fromOffset(0, h)
+                coverHold.Size = UDim2.fromOffset(0, h)
                 edgeShadow.Position = UDim2.fromOffset(left, cy)
                 shade.BackgroundTransparency = 0.2
                 local d1 = turn * 0.85
@@ -3620,7 +3624,7 @@ local Library = (function()
                 ease(fit, d1, { Scale = sc * 0.96 }, Enum.EasingStyle.Quad)
                 ease(barFill, d1, { Size = UDim2.fromScale(0, 1) }, Enum.EasingStyle.Quad, Enum.EasingDirection.InOut)
                 task.delay(d1 + 0.15, function()
-                    local cs = inst("UIScale", { Scale = 1 }, cover)
+                    local cs = inst("UIScale", { Scale = 1 }, coverHold)
                     ease(cs, 0.24, { Scale = 0.9 }, Enum.EasingStyle.Quad, Enum.EasingDirection.In)
                     ease(cover, 0.24, { BackgroundTransparency = 1 }, Enum.EasingStyle.Quad, Enum.EasingDirection.In)
                     for _, d in ipairs(cover:GetDescendants()) do
