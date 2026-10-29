@@ -341,28 +341,46 @@ local Library = (function()
     end
 
     local function makeSwitch(parent, on, changed)
-        local hit = inst("TextButton", { Name = "Switch", Text = "", AutoButtonColor = false, BackgroundTransparency = 1, Size = UDim2.fromOffset(52, 36) }, parent)
+        local hit = inst("TextButton", { Name = "Switch", Text = "", AutoButtonColor = false, BackgroundTransparency = 1, Size = UDim2.fromOffset(54, 36) }, parent)
         local trk = inst("Frame", {
-            AnchorPoint = Vector2.new(0.5, 0.5), Position = UDim2.fromScale(0.5, 0.5), Size = UDim2.fromOffset(44, 24),
-            BackgroundColor3 = C.Track, BorderSizePixel = 0,
+            AnchorPoint = Vector2.new(0.5, 0.5), Position = UDim2.fromScale(0.5, 0.5), Size = UDim2.fromOffset(48, 26),
+            BackgroundColor3 = C.Raise, BorderSizePixel = 0,
         }, hit)
         round(trk)
+        local tline = stroke(trk, 0.85)
+        local tgrad = inst("UIGradient", { Color = ColorSequence.new(Color3.new(1, 1, 1), Color3.fromRGB(150, 150, 150)), Rotation = 0, Enabled = false }, trk)
         local knob = inst("Frame", {
-            AnchorPoint = Vector2.new(0, 0.5), Position = UDim2.new(0, 3, 0.5, 0), Size = UDim2.fromOffset(18, 18),
-            BackgroundColor3 = Color3.new(1, 1, 1), BorderSizePixel = 0,
+            AnchorPoint = Vector2.new(0, 0.5), Position = UDim2.new(0, 4, 0.5, 0), Size = UDim2.fromOffset(18, 18),
+            BackgroundColor3 = Color3.fromRGB(120, 120, 132), BorderSizePixel = 0, ZIndex = 2,
         }, trk)
         round(knob)
+        local kc = icon("check", 10, knob, accent())
+        kc.AnchorPoint = Vector2.new(0.5, 0.5)
+        kc.Position = UDim2.fromScale(0.5, 0.5)
+        kc.ZIndex = 3
         local sw = { Value = on and true or false }
         local function paint(anim)
-            local pos = sw.Value and UDim2.new(1, -21, 0.5, 0) or UDim2.new(0, 3, 0.5, 0)
-            local col = sw.Value and accent() or C.Track
+            local pos = sw.Value and UDim2.new(1, -22, 0.5, 0) or UDim2.new(0, 4, 0.5, 0)
+            local col = sw.Value and accent() or C.Raise
+            local kcol = sw.Value and Color3.new(1, 1, 1) or Color3.fromRGB(120, 120, 132)
+            tgrad.Enabled = sw.Value
+            kc.ImageColor3 = accent()
             if anim then
-                if Lib.FX then knob.Size = UDim2.fromOffset(24, 18) end
-                ease(knob, 0.3, { Position = pos, Size = UDim2.fromOffset(18, 18) }, Enum.EasingStyle.Back)
+                if Lib.FX then knob.Size = UDim2.fromOffset(26, 18) end
+                ease(knob, 0.35, { Position = pos, Size = UDim2.fromOffset(18, 18), BackgroundColor3 = kcol }, Enum.EasingStyle.Back)
                 tw(trk, 0.2, { BackgroundColor3 = col })
+                tw(tline, 0.2, { Color = sw.Value and accent() or C.Line, Transparency = sw.Value and 0.4 or 0.85 })
+                kc.Size = UDim2.fromOffset(0, 0)
+                kc.Visible = sw.Value
+                if sw.Value then ease(kc, 0.3, { Size = UDim2.fromOffset(10, 10) }, Enum.EasingStyle.Back) end
             else
                 knob.Position = pos
+                knob.BackgroundColor3 = kcol
                 trk.BackgroundColor3 = col
+                tline.Color = sw.Value and accent() or C.Line
+                tline.Transparency = sw.Value and 0.4 or 0.85
+                kc.Visible = sw.Value
+                kc.Size = UDim2.fromOffset(10, 10)
             end
         end
         function sw.set(v)
@@ -593,7 +611,7 @@ local Library = (function()
 
     Lib.Folder = "ZeroX UI"
     Lib.Name = "ZeroX UI"
-    Lib.Version = "2.2"
+    Lib.Version = "2.3"
     Lib.AutoSave = false
     local function fsOk() return writefile and readfile and isfile end
     function Lib:EnsureFolder(path)
@@ -756,7 +774,7 @@ local Library = (function()
         round(avatar)
         glow(stroke(avatar, 0.4), 0.4)
         local brand = inst("Frame", {
-            Name = "Brand", BackgroundTransparency = 1, AnchorPoint = Vector2.new(0, 0.5), Position = UDim2.new(0, 66, 0.5, 2),
+            Name = "Brand", BackgroundTransparency = 1, AnchorPoint = Vector2.new(0, 0.5), Position = UDim2.new(0, 62, 0.5, 2),
             AutomaticSize = Enum.AutomaticSize.X, Size = UDim2.fromOffset(0, 30), Active = true,
         }, bar)
         list(brand, Enum.FillDirection.Horizontal, 10, nil, Enum.VerticalAlignment.Center)
@@ -768,7 +786,7 @@ local Library = (function()
         if cfg.Wordmark then
             wm = inst("ImageLabel", {
                 Name = "Wordmark", BackgroundTransparency = 1, Image = tostring(cfg.Wordmark), ScaleType = Enum.ScaleType.Fit,
-                Size = UDim2.fromOffset(tonumber(cfg.WordmarkWidth) or 150, tonumber(cfg.WordmarkHeight) or 24), LayoutOrder = 1,
+                Size = UDim2.fromOffset(math.floor((tonumber(cfg.WordmarkHeight) or 24) * (tonumber(cfg.WordmarkAspect) or 3) + 0.5), tonumber(cfg.WordmarkHeight) or 24), LayoutOrder = 1,
             }, brand)
             task.spawn(function()
                 local t = 0
@@ -825,7 +843,6 @@ local Library = (function()
                     end
                 end
             end
-            connect(brand.MouseEnter, function() if Lib.FX then play(true) end end)
             task.spawn(function()
                 local n = 0
                 while not Lib.Unloaded do
@@ -1012,28 +1029,6 @@ local Library = (function()
         }, head)
 
         local pages = inst("Frame", { Name = "Pages", BackgroundTransparency = 1, Position = UDim2.fromOffset(0, 188), Size = UDim2.new(1, 0, 1, -234), ClipsDescendants = true }, body)
-        local slashClip = inst("Frame", { Name = "SlashClip", BackgroundTransparency = 1, Size = UDim2.fromScale(1, 1), ClipsDescendants = true, ZIndex = 30 }, body)
-        local slash = inst("Frame", {
-            Name = "Slash", BackgroundColor3 = accent(), BorderSizePixel = 0, AnchorPoint = Vector2.new(0.5, 0.5),
-            Position = UDim2.new(-0.2, 0, 0.5, 0), Size = UDim2.new(0, 140, 1.6, 0), Rotation = 14, ZIndex = 30, Visible = false,
-        }, slashClip)
-        inst("UIGradient", {
-            Transparency = NumberSequence.new({
-                NumberSequenceKeypoint.new(0, 1), NumberSequenceKeypoint.new(0.42, 0.65), NumberSequenceKeypoint.new(0.5, 0),
-                NumberSequenceKeypoint.new(0.58, 0.65), NumberSequenceKeypoint.new(1, 1),
-            }),
-        }, slash)
-        onAccent(function(c) slash.BackgroundColor3 = c end)
-        function W.slashSweep()
-            if not Lib.FX then return end
-            W.slashTok = (W.slashTok or 0) + 1
-            local my = W.slashTok
-            slash.Position = UDim2.new(-0.2, 0, 0.5, 0)
-            slash.Visible = true
-            ease(slash, 0.6, { Position = UDim2.new(1.2, 0, 0.5, 0) }, Enum.EasingStyle.Quart, Enum.EasingDirection.InOut)
-            task.delay(0.62, function() if W.slashTok == my then slash.Visible = false end end)
-        end
-
         local foot = inst("Frame", { Name = "Footer", BackgroundTransparency = 1, AnchorPoint = Vector2.new(0, 1), Position = UDim2.fromScale(0, 1), Size = UDim2.new(1, 0, 0, 44) }, body)
         inst("Frame", { Name = "Line", BackgroundColor3 = C.Line, BackgroundTransparency = 0.93, BorderSizePixel = 0, Position = UDim2.fromOffset(18, 0), Size = UDim2.new(1, -36, 0, 1) }, foot)
         local me = inst("ImageLabel", {
@@ -1183,15 +1178,14 @@ local Library = (function()
             tab.paint(true)
             task.defer(function()
                 W.moveIndicator(tab, W.indReady)
-                if W.indReady then
-                    W.slashSweep()
-                    task.delay(0.3, W.shine)
-                end
+                if W.indReady then task.delay(0.3, W.shine) end
                 W.indReady = true
             end)
             if Lib.FX then
-                tab.stack.Position = UDim2.fromOffset(22, 26)
-                ease(tab.stack, 0.4, { Position = UDim2.fromOffset(22, 0) })
+                tab.stack.Position = UDim2.fromOffset(22, 44)
+                tab.stackScale.Scale = 0.95
+                ease(tab.stack, 0.55, { Position = UDim2.fromOffset(22, 0) }, Enum.EasingStyle.Back)
+                ease(tab.stackScale, 0.55, { Scale = 1 }, Enum.EasingStyle.Back)
                 for i, card in ipairs(tab.cards) do
                     if i > 10 then break end
                     card.scale.Scale = 0.92
@@ -1402,15 +1396,6 @@ local Library = (function()
                 tw(plb, 0.2, { TextColor3 = on and Color3.new(1, 1, 1) or C.Sub })
             end
             onAccent(function() tab.paint(tab.on) end)
-            connect(pill.MouseEnter, function()
-                if tab.on then return end
-                pill.BackgroundColor3 = C.Hover
-                pill.BackgroundTransparency = 0.4
-            end)
-            connect(pill.MouseLeave, function()
-                if tab.on then return end
-                pill.BackgroundTransparency = 1
-            end)
             connect(pill.MouseButton1Click, function() select(tab) end)
 
             local page = inst("ScrollingFrame", {
@@ -1424,6 +1409,7 @@ local Library = (function()
                 Position = UDim2.fromOffset(22, 0), Size = UDim2.new(1, -48, 0, 0),
             }, page)
             list(stack, nil, 12)
+            tab.stackScale = inst("UIScale", {}, stack)
             local wide = inst("Frame", { Name = "Wide", BackgroundTransparency = 1, AutomaticSize = Enum.AutomaticSize.Y, Size = UDim2.fromScale(1, 0), LayoutOrder = 1 }, stack)
             list(wide, nil, 12)
             local holder = inst("Frame", {
@@ -1525,18 +1511,38 @@ local Library = (function()
                 local area = r.below(36)
                 local hit = inst("TextButton", { Text = "", AutoButtonColor = false, BackgroundTransparency = 1, Position = UDim2.fromOffset(42, 0), Size = UDim2.new(1, -84, 0, 32) }, area)
                 local trk = inst("Frame", {
-                    AnchorPoint = Vector2.new(0, 0.5), Position = UDim2.new(0, 12, 0.5, 0), Size = UDim2.new(1, -24, 0, 8),
-                    BackgroundColor3 = C.Track, BorderSizePixel = 0,
+                    AnchorPoint = Vector2.new(0, 0.5), Position = UDim2.new(0, 12, 0.5, 0), Size = UDim2.new(1, -24, 0, 6),
+                    BackgroundColor3 = C.Raise, BorderSizePixel = 0,
                 }, hit)
                 round(trk)
+                stroke(trk, 0.9)
                 local fill = inst("Frame", { Size = UDim2.fromScale(0, 1), BackgroundColor3 = accent(), BorderSizePixel = 0 }, trk)
                 round(fill)
+                inst("UIGradient", { Color = ColorSequence.new(Color3.fromRGB(120, 120, 120), Color3.new(1, 1, 1)) }, fill)
                 local knob = inst("Frame", {
-                    AnchorPoint = Vector2.new(0.5, 0.5), Position = UDim2.fromScale(0, 0.5), Size = UDim2.fromOffset(24, 24),
-                    BackgroundColor3 = Color3.new(1, 1, 1), BorderSizePixel = 0, ZIndex = 2,
+                    AnchorPoint = Vector2.new(0.5, 0.5), Position = UDim2.fromScale(0, 0.5), Size = UDim2.fromOffset(20, 20),
+                    BackgroundColor3 = C.Bg, BorderSizePixel = 0, ZIndex = 2,
                 }, trk)
                 round(knob)
-                onAccent(function(c) fill.BackgroundColor3 = c end)
+                local kring = inst("UIStroke", { Color = accent(), Thickness = 3 }, knob)
+                local kdot = inst("Frame", {
+                    AnchorPoint = Vector2.new(0.5, 0.5), Position = UDim2.fromScale(0.5, 0.5), Size = UDim2.fromOffset(6, 6),
+                    BackgroundColor3 = Color3.new(1, 1, 1), BorderSizePixel = 0, ZIndex = 3,
+                }, knob)
+                round(kdot)
+                local bubble = text({
+                    Text = "", FontFace = F.Bold, TextSize = 12, TextColor3 = Color3.new(1, 1, 1), BackgroundColor3 = accent(), BackgroundTransparency = 0,
+                    AnchorPoint = Vector2.new(0.5, 1), Position = UDim2.new(0.5, 0, 0, -8), AutomaticSize = Enum.AutomaticSize.X,
+                    Size = UDim2.fromOffset(0, 20), TextXAlignment = Enum.TextXAlignment.Center, ZIndex = 4, Visible = false,
+                }, knob)
+                round(bubble, 6)
+                pad(bubble, 7, 7, 0, 0)
+                local bscale = inst("UIScale", { Scale = 0 }, bubble)
+                onAccent(function(c)
+                    fill.BackgroundColor3 = c
+                    kring.Color = c
+                    bubble.BackgroundColor3 = c
+                end)
                 local tws = {}
                 local function render(v, anim)
                     local a = (max > min) and math.clamp((v - min) / (max - min), 0, 1) or 0
@@ -1550,6 +1556,7 @@ local Library = (function()
                         knob.Position = UDim2.fromScale(a, 0.5)
                     end
                     if not box:IsFocused() then box.Text = fmt(v) end
+                    bubble.Text = fmt(v) .. (unit and unit ~= "" and (" " .. unit) or "")
                 end
                 local function commit(v, anim)
                     if v == nil then render(opt.Value, anim) return end
@@ -1600,7 +1607,11 @@ local Library = (function()
                 connect(hit.InputBegan, function(i)
                     if not isPress(i) then return end
                     dragging = true
-                    if Lib.FX then ease(knob, 0.2, { Size = UDim2.fromOffset(30, 30) }, Enum.EasingStyle.Back) end
+                    if Lib.FX then
+                        ease(knob, 0.2, { Size = UDim2.fromOffset(26, 26) }, Enum.EasingStyle.Back)
+                        bubble.Visible = true
+                        ease(bscale, 0.25, { Scale = 1 }, Enum.EasingStyle.Back)
+                    end
                     commit(fromX(i.Position.X), Lib.FX)
                 end)
                 connect(UIS.InputChanged, function(i)
@@ -1609,7 +1620,9 @@ local Library = (function()
                 connect(UIS.InputEnded, function(i)
                     if dragging and isPress(i) then
                         dragging = false
-                        ease(knob, 0.25, { Size = UDim2.fromOffset(24, 24) }, Enum.EasingStyle.Back)
+                        ease(knob, 0.25, { Size = UDim2.fromOffset(20, 20) }, Enum.EasingStyle.Back)
+                        ease(bscale, 0.15, { Scale = 0 }, Enum.EasingStyle.Quad)
+                        task.delay(0.16, function() if not dragging then bubble.Visible = false end end)
                     end
                 end)
                 connect(box.FocusLost, function()
@@ -1679,20 +1692,40 @@ local Library = (function()
                 opt.Multi, opt.Values = multi, ocfg.Values or {}
                 local r = newRow(cur(), ocfg.Title, ocfg.Description, 170)
                 local btn = inst("TextButton", {
-                    Name = "Dropdown", Text = "", AutoButtonColor = false, BackgroundColor3 = C.Raise, BackgroundTransparency = 0.3,
-                    BorderSizePixel = 0, Size = UDim2.fromOffset(170, 42),
+                    Name = "Dropdown", Text = "", AutoButtonColor = false, BackgroundColor3 = C.Raise, BackgroundTransparency = 0,
+                    BorderSizePixel = 0, Size = UDim2.fromOffset(170, 40),
                 }, r.right)
-                round(btn, 13)
-                local lbl = text({
-                    Text = "", FontFace = F.Semi, TextSize = 15, Position = UDim2.fromOffset(14, 0), Size = UDim2.new(1, -46, 1, 0),
-                    TextXAlignment = Enum.TextXAlignment.Right, TextTruncate = Enum.TextTruncate.AtEnd,
+                round(btn, 11)
+                local bline = stroke(btn, 0.88)
+                local bar = inst("Frame", {
+                    BackgroundColor3 = accent(), BorderSizePixel = 0, AnchorPoint = Vector2.new(0, 0.5), Position = UDim2.new(0, 8, 0.5, 0),
+                    Size = UDim2.fromOffset(3, 16),
                 }, btn)
-                local chev = icon("chevron", 14, btn, C.Sub)
-                chev.AnchorPoint = Vector2.new(1, 0.5)
-                chev.Position = UDim2.new(1, -16, 0.5, 0)
+                round(bar)
+                local lbl = text({
+                    Text = "", FontFace = F.Semi, TextSize = 14, Position = UDim2.fromOffset(19, 0), Size = UDim2.new(1, -54, 1, 0),
+                    TextTruncate = Enum.TextTruncate.AtEnd,
+                }, btn)
+                local cbg = inst("Frame", {
+                    BackgroundColor3 = C.Hover, BorderSizePixel = 0, AnchorPoint = Vector2.new(1, 0.5), Position = UDim2.new(1, -8, 0.5, 0),
+                    Size = UDim2.fromOffset(24, 24),
+                }, btn)
+                round(cbg, 7)
+                local chev = icon("chevron", 12, cbg, C.Text)
+                chev.AnchorPoint = Vector2.new(0.5, 0.5)
+                chev.Position = UDim2.fromScale(0.5, 0.5)
+                onAccent(function(c) bar.BackgroundColor3 = c end)
                 press(btn)
-                connect(btn.MouseEnter, function() btn.BackgroundColor3 = C.Hover end)
-                connect(btn.MouseLeave, function() btn.BackgroundColor3 = C.Raise end)
+                connect(btn.MouseEnter, function()
+                    tw(btn, 0.15, { BackgroundColor3 = C.Hover })
+                    tw(bline, 0.15, { Color = accent(), Transparency = 0.5 })
+                    tw(bar, 0.15, { Size = UDim2.fromOffset(3, 22) })
+                end)
+                connect(btn.MouseLeave, function()
+                    tw(btn, 0.2, { BackgroundColor3 = C.Raise })
+                    if not W.ddOpen or W.ddOpen ~= btn then tw(bline, 0.2, { Color = C.Line, Transparency = 0.88 }) end
+                    tw(bar, 0.2, { Size = UDim2.fromOffset(3, 16) })
+                end)
 
                 local function has(v)
                     for _, x in ipairs(opt.Values) do if x == v then return true end end
@@ -1741,10 +1774,16 @@ local Library = (function()
                     local w = math.max(btn.AbsoluteSize.X / s, 230)
                     local f = openPopup(btn, w, h)
                     menuOpen = true
-                    ease(chev, 0.25, { Rotation = 180 })
+                    W.ddOpen = btn
+                    ease(chev, 0.3, { Rotation = 180 }, Enum.EasingStyle.Back)
+                    tw(cbg, 0.2, { BackgroundColor3 = accent() })
+                    tw(bline, 0.2, { Color = accent(), Transparency = 0.2 })
                     Pop.onClose = function()
                         menuOpen = false
-                        ease(chev, 0.25, { Rotation = 0 })
+                        if W.ddOpen == btn then W.ddOpen = nil end
+                        ease(chev, 0.3, { Rotation = 0 }, Enum.EasingStyle.Back)
+                        tw(cbg, 0.2, { BackgroundColor3 = C.Hover })
+                        tw(bline, 0.25, { Color = C.Line, Transparency = 0.88 })
                         if opt._pendingValues then
                             local pv = opt._pendingValues
                             opt._pendingValues = nil
@@ -1768,36 +1807,68 @@ local Library = (function()
                     }, f)
                     list(sc, nil, 2)
                     local items = {}
-                    local function paintItems()
+                    local function paintItems(anim)
                         for _, it in ipairs(items) do
                             local on
                             if multi then on = opt.Value[it.v] and true or false else on = opt.Value == it.v end
+                            it.on = on
+                            local t = anim and 0.18 or 0.01
+                            tw(it.box, t, { BackgroundColor3 = on and accent() or C.Raise })
+                            tw(it.boxLine, t, { Color = on and accent() or C.Line, Transparency = on and 0 or 0.8 })
+                            tw(it.lbl, t, { TextColor3 = on and C.Text or C.Sub })
+                            tw(it.b, t, { BackgroundTransparency = on and 0.82 or 1 })
                             it.check.Visible = on
-                            it.lbl.TextColor3 = on and C.Text or C.Sub
+                            if on and anim then
+                                it.check.Size = UDim2.fromOffset(0, 0)
+                                ease(it.check, 0.3, { Size = UDim2.fromOffset(11, 11) }, Enum.EasingStyle.Back)
+                            else
+                                it.check.Size = UDim2.fromOffset(11, 11)
+                            end
                         end
                     end
                     for i, v in ipairs(vals) do
                         local b = inst("TextButton", {
-                            Text = "", AutoButtonColor = false, BackgroundColor3 = C.Hover, BackgroundTransparency = 1, BorderSizePixel = 0,
+                            Text = "", AutoButtonColor = false, BackgroundColor3 = accent(), BackgroundTransparency = 1, BorderSizePixel = 0,
                             Size = UDim2.new(1, -4, 0, itemH), LayoutOrder = i,
                         }, sc)
                         round(b, 10)
+                        local box = inst("Frame", {
+                            BackgroundColor3 = C.Raise, BorderSizePixel = 0, AnchorPoint = Vector2.new(0, 0.5), Position = UDim2.new(0, 12, 0.5, 0),
+                            Size = UDim2.fromOffset(18, 18),
+                        }, b)
+                        round(box, multi and 5 or 9)
+                        local boxLine = stroke(box, 0.8)
+                        local ck = icon("check", 11, box, Color3.new(1, 1, 1))
+                        ck.AnchorPoint = Vector2.new(0.5, 0.5)
+                        ck.Position = UDim2.fromScale(0.5, 0.5)
                         local l = text({
-                            Text = tostring(v), FontFace = F.Semi, TextSize = 14, Position = UDim2.fromOffset(12, 0), Size = UDim2.new(1, -44, 1, 0),
+                            Text = tostring(v), FontFace = F.Semi, TextSize = 14, Position = UDim2.fromOffset(40, 0), Size = UDim2.new(1, -52, 1, 0),
                             TextTruncate = Enum.TextTruncate.AtEnd,
                         }, b)
-                        local ck = icon("check", 14, b, accent())
-                        ck.AnchorPoint = Vector2.new(1, 0.5)
-                        ck.Position = UDim2.new(1, -12, 0.5, 0)
-                        local it = { v = v, b = b, lbl = l, check = ck, key = string.lower(tostring(v)) }
+                        local it = { v = v, b = b, lbl = l, check = ck, box = box, boxLine = boxLine, key = string.lower(tostring(v)) }
                         items[#items + 1] = it
-                        b.MouseEnter:Connect(function() b.BackgroundTransparency = 0.4 end)
-                        b.MouseLeave:Connect(function() b.BackgroundTransparency = 1 end)
+                        if Lib.FX and i <= 12 then
+                            l.TextTransparency = 1
+                            l.Position = UDim2.fromOffset(56, 0)
+                            box.Size = UDim2.fromOffset(0, 0)
+                            task.delay((i - 1) * 0.03, function()
+                                ease(l, 0.35, { TextTransparency = 0, Position = UDim2.fromOffset(40, 0) })
+                                ease(box, 0.35, { Size = UDim2.fromOffset(18, 18) }, Enum.EasingStyle.Back)
+                            end)
+                        end
+                        b.MouseEnter:Connect(function()
+                            if not it.on then tw(b, 0.12, { BackgroundTransparency = 0.9 }) end
+                            tw(l, 0.15, { Position = UDim2.fromOffset(44, 0) })
+                        end)
+                        b.MouseLeave:Connect(function()
+                            if not it.on then tw(b, 0.15, { BackgroundTransparency = 1 }) end
+                            tw(l, 0.15, { Position = UDim2.fromOffset(40, 0) })
+                        end)
                         b.MouseButton1Click:Connect(function()
                             if multi then
                                 opt.Value[v] = (not opt.Value[v]) or nil
                                 refresh()
-                                paintItems()
+                                paintItems(true)
                                 opt:_fire()
                             else
                                 closePopup()
@@ -2008,7 +2079,6 @@ local Library = (function()
                 end
                 local plL = chip(1)
                 local pgL = chip(2)
-                local upL = chip(3)
                 local idRow = inst("TextButton", {
                     Text = "", AutoButtonColor = false, BackgroundColor3 = C.Raise, BackgroundTransparency = 0, BorderSizePixel = 0,
                     Size = UDim2.new(1, 0, 0, 30), LayoutOrder = 2,
@@ -2016,7 +2086,7 @@ local Library = (function()
                 round(idRow, 9)
                 stroke(idRow, 0.93)
                 local idL = text({
-                    Text = "Place " .. tostring(game.PlaceId) .. "   ·   Server " .. string.sub(tostring(game.JobId), 1, 8),
+                    Text = "Server " .. string.sub(tostring(game.JobId), 1, 8),
                     FontFace = F.Mono, TextSize = 12, TextColor3 = C.Sub, Position = UDim2.fromOffset(12, 0), Size = UDim2.new(1, -70, 1, 0),
                     TextTruncate = Enum.TextTruncate.AtEnd,
                 }, idRow)
@@ -2082,7 +2152,7 @@ local Library = (function()
                         players = #Plr:GetPlayers() .. "/" .. Plr.MaxPlayers, ping = ping,
                         pingColor = ping < 120 and C.Good or (ping < 250 and C.Warn or C.Bad),
                     })
-                    upL.Text = uptime()
+                    idL.Text = uptime() .. "   ·   Server " .. (string.sub(tostring(game.JobId), 1, 8) ~= "" and string.sub(tostring(game.JobId), 1, 8) or "studio")
                 end
                 tick()
                 task.spawn(function()
