@@ -108,6 +108,11 @@ local Library = (function()
         help = "rbxassetid://106563268903746",
         gamepad = "rbxassetid://107710782304881",
         signal = "rbxassetid://127365451355653",
+        refresh = "rbxassetid://97876840821545",
+        shuffle = "rbxassetid://75346543378152",
+        exit = "rbxassetid://78586132872195",
+        copy = "rbxassetid://74221368188325",
+        bars = "rbxassetid://125832308574063",
         warn = "rbxassetid://107822175160368",
     }
     local SectionIcons = {
@@ -789,7 +794,7 @@ local Library = (function()
 
     Lib.Folder = "ZeroX UI"
     Lib.Name = "ZeroX UI"
-    Lib.Version = "2.6"
+    Lib.Version = "2.7"
     Lib.AutoSave = false
     local function fsOk() return writefile and readfile and isfile end
     function Lib:EnsureFolder(path)
@@ -2457,117 +2462,184 @@ local Library = (function()
                 card.n = card.n + 1
                 local Plr = game:GetService("Players")
                 local wrap = inst("Frame", { Name = "Game", BackgroundTransparency = 1, AutomaticSize = Enum.AutomaticSize.Y, Size = UDim2.fromScale(1, 0), LayoutOrder = card.n }, card.frame)
-                pad(wrap, 0, 0, 2, 14)
+                pad(wrap, 0, 0, 4, 14)
                 list(wrap, nil, 12)
-                local banner = inst("CanvasGroup", { Name = "Banner", BackgroundColor3 = C.Raise, BorderSizePixel = 0, Size = UDim2.new(1, 0, 0, 158), LayoutOrder = 1 }, wrap)
-                round(banner, 14)
-                local art = inst("ImageLabel", {
-                    BackgroundTransparency = 1, AnchorPoint = Vector2.new(0.5, 0.5), Position = UDim2.fromScale(0.5, 0.5), Size = UDim2.fromScale(1, 1),
-                    ScaleType = Enum.ScaleType.Crop, Image = "rbxthumb://type=GameIcon&id=" .. tostring(game.GameId) .. "&w=512&h=512",
-                }, banner)
-                local artScale = inst("UIScale", { Scale = 1.04 }, art)
-                local shade = inst("Frame", { BackgroundColor3 = Color3.new(0, 0, 0), BorderSizePixel = 0, Size = UDim2.fromScale(1, 1), ZIndex = 2 }, banner)
-                inst("UIGradient", {
-                    Rotation = 90,
-                    Transparency = NumberSequence.new({ NumberSequenceKeypoint.new(0, 0.85), NumberSequenceKeypoint.new(0.45, 0.7), NumberSequenceKeypoint.new(1, 0.05) }),
-                }, shade)
-                local tint = inst("Frame", { BackgroundColor3 = accent(), BorderSizePixel = 0, Size = UDim2.fromScale(1, 1), ZIndex = 2 }, banner)
-                inst("UIGradient", {
-                    Rotation = 0,
-                    Transparency = NumberSequence.new({ NumberSequenceKeypoint.new(0, 0.55), NumberSequenceKeypoint.new(0.6, 1), NumberSequenceKeypoint.new(1, 1) }),
-                }, tint)
-                local sheen = inst("Frame", { BackgroundColor3 = Color3.new(1, 1, 1), BorderSizePixel = 0, AnchorPoint = Vector2.new(0.5, 0.5), Position = UDim2.fromScale(-0.3, 0.5), Size = UDim2.new(0, 70, 2, 0), Rotation = 18, ZIndex = 3 }, banner)
-                inst("UIGradient", {
-                    Transparency = NumberSequence.new({ NumberSequenceKeypoint.new(0, 1), NumberSequenceKeypoint.new(0.5, 0.82), NumberSequenceKeypoint.new(1, 1) }),
-                }, sheen)
-                onAccent(function(c) tint.BackgroundColor3 = c end)
-                local live = inst("Frame", {
-                    BackgroundTransparency = 1, AnchorPoint = Vector2.new(1, 0), Position = UDim2.new(1, -10, 0, 10),
-                    AutomaticSize = Enum.AutomaticSize.X, Size = UDim2.fromOffset(0, 24), ZIndex = 4,
-                }, banner)
-                list(live, Enum.FillDirection.Horizontal, 6, nil, Enum.VerticalAlignment.Center)
-                local function pill(order, ic)
-                    local pf = inst("Frame", {
-                        BackgroundColor3 = Color3.new(0, 0, 0), BackgroundTransparency = 0.35, BorderSizePixel = 0,
-                        AutomaticSize = Enum.AutomaticSize.X, Size = UDim2.fromOffset(0, 24), LayoutOrder = order, ZIndex = 4,
-                    }, live)
-                    round(pf)
-                    pad(pf, 8, 10, 0, 0)
-                    list(pf, Enum.FillDirection.Horizontal, 5, nil, Enum.VerticalAlignment.Center)
-                    local dot = inst("Frame", { BackgroundColor3 = C.Good, BorderSizePixel = 0, Size = UDim2.fromOffset(6, 6), LayoutOrder = 1, ZIndex = 5 }, pf)
-                    round(dot)
-                    if ic then
-                        dot.Visible = false
-                        local ii = icon(ic, 12, pf, Color3.new(1, 1, 1))
-                        ii.LayoutOrder = 1
-                        ii.ZIndex = 5
-                    end
-                    local l = text({
-                        Text = "", FontFace = F.Semi, TextSize = 12, TextColor3 = Color3.new(1, 1, 1), AutomaticSize = Enum.AutomaticSize.X,
-                        Size = UDim2.fromOffset(0, 24), LayoutOrder = 2, ZIndex = 5,
-                    }, pf)
-                    return l, dot
+
+                local topRow = inst("Frame", { BackgroundTransparency = 1, Size = UDim2.new(1, 0, 0, 96), LayoutOrder = 1 }, wrap)
+                local frameBox = inst("Frame", { BackgroundTransparency = 1, Size = UDim2.fromOffset(96, 96) }, topRow)
+                local thumb = inst("ImageLabel", {
+                    BackgroundColor3 = C.Raise, BorderSizePixel = 0, AnchorPoint = Vector2.new(0.5, 0.5), Position = UDim2.fromScale(0.5, 0.5),
+                    Size = UDim2.fromOffset(80, 80), ScaleType = Enum.ScaleType.Crop, ClipsDescendants = true,
+                    Image = "rbxthumb://type=GameIcon&id=" .. tostring(game.GameId) .. "&w=150&h=150",
+                }, frameBox)
+                round(thumb, 6)
+                local scan = inst("Frame", {
+                    BackgroundColor3 = accent(), BorderSizePixel = 0, Position = UDim2.fromScale(0, -0.1), Size = UDim2.new(1, 0, 0, 2), ZIndex = 2,
+                }, thumb)
+                inst("UIGradient", { Transparency = NumberSequence.new({ NumberSequenceKeypoint.new(0, 1), NumberSequenceKeypoint.new(0.5, 0.1), NumberSequenceKeypoint.new(1, 1) }) }, scan)
+                local glowScan = inst("Frame", {
+                    BackgroundColor3 = accent(), BorderSizePixel = 0, AnchorPoint = Vector2.new(0, 1), Position = UDim2.fromScale(0, 0), Size = UDim2.new(1, 0, 0, 18), ZIndex = 2,
+                }, scan)
+                inst("UIGradient", { Rotation = 90, Transparency = NumberSequence.new(1, 0.7) }, glowScan)
+                local brackets = {}
+                for i = 1, 4 do
+                    local right, bottom = (i == 2 or i == 4), (i >= 3)
+                    local holder = inst("Frame", {
+                        BackgroundTransparency = 1, AnchorPoint = Vector2.new(right and 1 or 0, bottom and 1 or 0),
+                        Position = UDim2.fromScale(right and 1 or 0, bottom and 1 or 0), Size = UDim2.fromOffset(16, 16), ZIndex = 3,
+                    }, frameBox)
+                    local hbar = inst("Frame", {
+                        BackgroundColor3 = accent(), BorderSizePixel = 0, AnchorPoint = Vector2.new(right and 1 or 0, bottom and 1 or 0),
+                        Position = UDim2.fromScale(right and 1 or 0, bottom and 1 or 0), Size = UDim2.new(1, 0, 0, 2), ZIndex = 3,
+                    }, holder)
+                    local vbar = inst("Frame", {
+                        BackgroundColor3 = accent(), BorderSizePixel = 0, AnchorPoint = Vector2.new(right and 1 or 0, bottom and 1 or 0),
+                        Position = UDim2.fromScale(right and 1 or 0, bottom and 1 or 0), Size = UDim2.new(0, 2, 1, 0), ZIndex = 3,
+                    }, holder)
+                    brackets[i] = { holder = holder, h = hbar, v = vbar, right = right, bottom = bottom }
                 end
-                local liveL, liveDot = pill(1, nil)
-                liveL.Text = "LIVE"
-                local plL = pill(2, "people")
-                local pgL, pgDot = pill(3, nil)
-                local tag = text({
-                    Text = "ROBLOX", FontFace = F.Bold, TextSize = 11, TextColor3 = accent():Lerp(Color3.new(1, 1, 1), 0.35),
-                    Position = UDim2.new(0, 14, 1, -62), Size = UDim2.new(1, -28, 0, 14), ZIndex = 4,
-                }, banner)
-                onAccent(function(c) tag.TextColor3 = c:Lerp(Color3.new(1, 1, 1), 0.35) end)
-                local nameL = text({
-                    Text = "Loading...", FontFace = F.Bold, TextSize = 22, TextColor3 = Color3.new(1, 1, 1),
-                    Position = UDim2.new(0, 14, 1, -48), Size = UDim2.new(1, -28, 0, 26), TextTruncate = Enum.TextTruncate.AtEnd, ZIndex = 4,
-                }, banner)
-                local byL = text({
-                    Text = "", FontFace = F.Med, TextSize = 12, TextColor3 = Color3.fromRGB(205, 205, 212),
-                    Position = UDim2.new(0, 14, 1, -22), Size = UDim2.new(1, -28, 0, 14), TextTruncate = Enum.TextTruncate.AtEnd, ZIndex = 4,
-                }, banner)
-                local idRow = inst("TextButton", {
-                    Text = "", AutoButtonColor = false, BackgroundColor3 = C.Raise, BackgroundTransparency = 0, BorderSizePixel = 0,
-                    Size = UDim2.new(1, 0, 0, 32), LayoutOrder = 2,
-                }, wrap)
-                round(idRow, 10)
-                stroke(idRow, 0.92)
-                local cic = icon("clock", 13, idRow, C.Sub)
-                cic.AnchorPoint = Vector2.new(0, 0.5)
-                cic.Position = UDim2.new(0, 12, 0.5, 0)
-                local idL = text({
-                    Text = "", FontFace = F.Mono, TextSize = 12, TextColor3 = C.Sub, Position = UDim2.fromOffset(32, 0), Size = UDim2.new(1, -96, 1, 0),
-                    TextTruncate = Enum.TextTruncate.AtEnd,
-                }, idRow)
-                local copyL = text({
-                    Text = "Copy ID", FontFace = F.Semi, TextSize = 12, AnchorPoint = Vector2.new(1, 0.5), Position = UDim2.new(1, -12, 0.5, 0),
-                    Size = UDim2.fromOffset(70, 20), TextXAlignment = Enum.TextXAlignment.Right,
-                }, idRow)
-                onAccent(function(c) copyL.TextColor3 = c:Lerp(Color3.new(1, 1, 1), 0.25) end)
-                press(idRow)
-                connect(idRow.MouseButton1Click, function()
-                    local ok = pcall(function() (setclipboard or toclipboard)(tostring(game.JobId)) end)
-                    copyL.Text = ok and "Copied" or "No clipboard"
-                    task.delay(1.4, function() copyL.Text = "Copy ID" end)
+                onAccent(function(c)
+                    scan.BackgroundColor3 = c
+                    glowScan.BackgroundColor3 = c
+                    for _, br in ipairs(brackets) do
+                        br.h.BackgroundColor3 = c
+                        br.v.BackgroundColor3 = c
+                    end
                 end)
-                local btns = inst("Frame", { BackgroundTransparency = 1, Size = UDim2.new(1, 0, 0, 36), LayoutOrder = 3 }, wrap)
+
+                local info = inst("Frame", { BackgroundTransparency = 1, Position = UDim2.fromOffset(110, 6), Size = UDim2.new(1, -110, 1, -6) }, topRow)
+                local np = inst("Frame", { BackgroundTransparency = 1, Size = UDim2.new(1, 0, 0, 14), AutomaticSize = Enum.AutomaticSize.X }, info)
+                list(np, Enum.FillDirection.Horizontal, 6, nil, Enum.VerticalAlignment.Center)
+                local npDot = inst("Frame", { BackgroundColor3 = accent(), BorderSizePixel = 0, Size = UDim2.fromOffset(6, 6), LayoutOrder = 1 }, np)
+                round(npDot)
+                local npL = text({
+                    Text = "NOW PLAYING", FontFace = F.Mono, TextSize = 11, TextColor3 = accent(), AutomaticSize = Enum.AutomaticSize.X,
+                    Size = UDim2.fromOffset(0, 14), LayoutOrder = 2,
+                }, np)
+                onAccent(function(c)
+                    npDot.BackgroundColor3 = c
+                    npL.TextColor3 = c:Lerp(Color3.new(1, 1, 1), 0.2)
+                end)
+                local nameL = text({
+                    Text = "Loading...", FontFace = F.Bold, TextSize = 18, Position = UDim2.fromOffset(0, 20), Size = UDim2.new(1, 0, 0, 24),
+                    TextTruncate = Enum.TextTruncate.AtEnd,
+                }, info)
+                local byL = text({
+                    Text = "", FontFace = F.Med, TextSize = 12, TextColor3 = C.Sub, Position = UDim2.fromOffset(0, 44), Size = UDim2.new(1, 0, 0, 16),
+                    TextTruncate = Enum.TextTruncate.AtEnd,
+                }, info)
+                local srv = inst("TextButton", {
+                    Text = "", AutoButtonColor = false, BackgroundTransparency = 1, Position = UDim2.fromOffset(0, 66), Size = UDim2.new(1, 0, 0, 22),
+                }, info)
+                local srvL = text({
+                    Text = "", FontFace = F.Mono, TextSize = 11, TextColor3 = C.Dim, Size = UDim2.new(1, -24, 1, 0), TextTruncate = Enum.TextTruncate.AtEnd,
+                }, srv)
+                local cpi = icon("copy", 13, srv, C.Dim)
+                cpi.AnchorPoint = Vector2.new(1, 0.5)
+                cpi.Position = UDim2.new(1, -2, 0.5, 0)
+                connect(srv.MouseEnter, function()
+                    tw(srvL, 0.15, { TextColor3 = C.Text })
+                    tw(cpi, 0.15, { ImageColor3 = accent() })
+                end)
+                connect(srv.MouseLeave, function()
+                    tw(srvL, 0.2, { TextColor3 = C.Dim })
+                    tw(cpi, 0.2, { ImageColor3 = C.Dim })
+                end)
+                local jid = string.sub(tostring(game.JobId), 1, 8)
+                local srvText = "SRV " .. (jid ~= "" and string.upper(jid) or "STUDIO") .. "  /  PLACE " .. tostring(game.PlaceId)
+                srvL.Text = srvText
+                connect(srv.MouseButton1Click, function()
+                    local ok = pcall(function() (setclipboard or toclipboard)(tostring(game.JobId)) end)
+                    srvL.Text = ok and "JOB ID COPIED" or "NO CLIPBOARD"
+                    srvL.TextColor3 = ok and C.Good or C.Bad
+                    task.delay(1.4, function()
+                        srvL.Text = srvText
+                        srvL.TextColor3 = C.Dim
+                    end)
+                end)
+
+                local tele = inst("Frame", { BackgroundTransparency = 1, Size = UDim2.new(1, 0, 0, 62), LayoutOrder = 2 }, wrap)
+                list(tele, Enum.FillDirection.Horizontal, 8, nil, Enum.VerticalAlignment.Center)
+                local function meter(order, label, ic)
+                    local m = inst("Frame", { BackgroundColor3 = C.Raise, BorderSizePixel = 0, Size = UDim2.new(1 / 3, -6, 1, 0), LayoutOrder = order }, tele)
+                    round(m, 10)
+                    stroke(m, 0.92)
+                    local mi = icon(ic, 12, m, C.Dim)
+                    mi.Position = UDim2.fromOffset(10, 10)
+                    text({ Text = label, FontFace = F.Mono, TextSize = 10, TextColor3 = C.Dim, Position = UDim2.fromOffset(27, 8), Size = UDim2.new(1, -34, 0, 14) }, m)
+                    local v = text({ Text = "-", FontFace = F.Bold, TextSize = 16, Position = UDim2.fromOffset(10, 24), Size = UDim2.new(1, -20, 0, 20) }, m)
+                    local trackM = inst("Frame", { BackgroundColor3 = C.Track, BorderSizePixel = 0, Position = UDim2.new(0, 10, 1, -11), Size = UDim2.new(1, -20, 0, 3) }, m)
+                    round(trackM)
+                    local fillM = inst("Frame", { BackgroundColor3 = accent(), BorderSizePixel = 0, Size = UDim2.fromScale(0, 1) }, trackM)
+                    round(fillM)
+                    return v, fillM
+                end
+                local plV, plF = meter(1, "PLAYERS", "people")
+                local pgV, pgF = meter(2, "PING", "bars")
+                local upV, upF = meter(3, "UPTIME", "clock")
+                onAccent(function(c)
+                    plF.BackgroundColor3 = c
+                    upF.BackgroundColor3 = c
+                end)
+
+                local btns = inst("Frame", { BackgroundTransparency = 1, Size = UDim2.new(1, 0, 0, 38), LayoutOrder = 3 }, wrap)
                 list(btns, Enum.FillDirection.Horizontal, 8, nil, Enum.VerticalAlignment.Center)
                 local list2 = gcfg.Buttons or {}
                 local nb = math.max(#list2, 1)
                 for i, b in ipairs(list2) do
-                    local bt = makeButton(btns, b.Title, function()
-                        if b.Callback then task.spawn(safe, b.Callback) end
-                    end, b.Danger and Color3.fromRGB(200, 30, 44) or nil)
-                    bt.AutomaticSize = Enum.AutomaticSize.None
-                    bt.Size = UDim2.new(1 / nb, -math.floor(8 * (nb - 1) / nb + 0.5), 0, 36)
-                    bt.TextTruncate = Enum.TextTruncate.AtEnd
-                    bt.LayoutOrder = i
-                    for _, pd in ipairs(bt:GetChildren()) do
-                        if pd:IsA("UIPadding") then
-                            pd.PaddingLeft = UDim.new(0, 6)
-                            pd.PaddingRight = UDim.new(0, 6)
-                        end
+                    local low = string.lower(tostring(b.Title or ""))
+                    local ic = b.Icon or (low:find("rejoin") and "refresh") or (low:find("hop") and "shuffle") or (low:find("leave") and "exit") or nil
+                    local danger = b.Danger and true or false
+                    local base = danger and C.Bg or C.Raise
+                    local bt = inst("TextButton", {
+                        Text = "", AutoButtonColor = false, BackgroundColor3 = base, BorderSizePixel = 0,
+                        Size = UDim2.new(1 / nb, -math.floor(8 * (nb - 1) / nb + 0.5), 0, 38), LayoutOrder = i,
+                    }, btns)
+                    round(bt, 10)
+                    local bl = stroke(bt, danger and 0.3 or 0.9)
+                    local red = Color3.fromRGB(225, 40, 54)
+                    if danger then bl.Color = red end
+                    local inner = inst("Frame", {
+                        BackgroundTransparency = 1, AnchorPoint = Vector2.new(0.5, 0.5), Position = UDim2.fromScale(0.5, 0.5),
+                        AutomaticSize = Enum.AutomaticSize.X, Size = UDim2.fromOffset(0, 20),
+                    }, bt)
+                    list(inner, Enum.FillDirection.Horizontal, 7, nil, Enum.VerticalAlignment.Center)
+                    local bi
+                    if ic then
+                        bi = icon(ic, 14, inner, danger and red or C.Sub)
+                        bi.LayoutOrder = 1
                     end
+                    local bl2 = text({
+                        Text = tostring(b.Title or ""), FontFace = F.Semi, TextSize = 13, TextColor3 = danger and red or C.Text,
+                        AutomaticSize = Enum.AutomaticSize.X, Size = UDim2.fromOffset(0, 20), LayoutOrder = 2,
+                    }, inner)
+                    press(bt)
+                    connect(bt.MouseEnter, function()
+                        if danger then
+                            tw(bt, 0.15, { BackgroundColor3 = red })
+                            tw(bl2, 0.15, { TextColor3 = Color3.new(1, 1, 1) })
+                            if bi then tw(bi, 0.15, { ImageColor3 = Color3.new(1, 1, 1) }) end
+                        else
+                            tw(bt, 0.15, { BackgroundColor3 = C.Hover })
+                            tw(bl, 0.15, { Color = accent(), Transparency = 0.5 })
+                            if bi then tw(bi, 0.15, { ImageColor3 = accent(), Rotation = Lib.FX and 180 or 0 }) end
+                        end
+                    end)
+                    connect(bt.MouseLeave, function()
+                        tw(bt, 0.2, { BackgroundColor3 = base })
+                        if danger then
+                            tw(bl2, 0.2, { TextColor3 = red })
+                            if bi then tw(bi, 0.2, { ImageColor3 = red }) end
+                        else
+                            tw(bl, 0.2, { Color = C.Line, Transparency = 0.9 })
+                            if bi then tw(bi, 0.3, { ImageColor3 = C.Sub, Rotation = 0 }) end
+                        end
+                    end)
+                    connect(bt.MouseButton1Click, function()
+                        if b.Callback then task.spawn(safe, b.Callback) end
+                    end)
                 end
+
                 local entry = { frame = wrap, search = "game server rejoin hop leave" }
                 table.insert(card.rows, entry)
                 task.spawn(function()
@@ -2581,40 +2653,26 @@ local Library = (function()
                     end
                     entry.search = string.lower("game server rejoin hop leave " .. nameL.Text .. " " .. byL.Text)
                 end)
-                task.spawn(function()
-                    local ok, data = pcall(function()
-                        return HttpService:JSONDecode(game:HttpGet("https://games.roblox.com/v2/games/" .. tostring(game.GameId) .. "/media"))
-                    end)
-                    if ok and type(data) == "table" and type(data.data) == "table" then
-                        for _, m in ipairs(data.data) do
-                            if m.assetType == "Image" and m.imageId and m.approved ~= false then
-                                art.Image = "rbxassetid://" .. tostring(m.imageId)
-                                break
-                            end
-                        end
-                    end
-                end)
+
                 local h = {}
                 function h:Set(st)
-                    if st.players then plL.Text = tostring(st.players) end
+                    if st.players then plV.Text = tostring(st.players) end
                     if st.ping then
-                        pgL.Text = tostring(st.ping) .. " ms"
-                        pgDot.BackgroundColor3 = st.pingColor or C.Good
+                        pgV.Text = tostring(st.ping) .. " ms"
+                        pgV.TextColor3 = st.pingColor or C.Text
+                        pgF.BackgroundColor3 = st.pingColor or C.Good
+                        tw(pgF, 0.4, { Size = UDim2.fromScale(math.clamp((tonumber(st.ping) or 0) / 300, 0.03, 1), 1) })
                     end
-                end
-                local function uptime()
-                    local t = math.floor(workspace.DistributedGameTime)
-                    local hh, mm = math.floor(t / 3600), math.floor(t / 60) % 60
-                    return hh > 0 and string.format("Up %dh %02dm", hh, mm) or string.format("Up %dm", mm)
                 end
                 local function tick()
                     local ping = Lib.Ping or 0
-                    h:Set({
-                        players = #Plr:GetPlayers() .. "/" .. Plr.MaxPlayers, ping = ping,
-                        pingColor = ping < 120 and C.Good or (ping < 250 and C.Warn or C.Bad),
-                    })
-                    local jid = string.sub(tostring(game.JobId), 1, 8)
-                    idL.Text = uptime() .. "   ·   Server " .. (jid ~= "" and jid or "studio")
+                    local cur, mx = #Plr:GetPlayers(), math.max(Plr.MaxPlayers, 1)
+                    h:Set({ players = cur .. " / " .. mx, ping = ping, pingColor = ping < 120 and C.Good or (ping < 250 and C.Warn or C.Bad) })
+                    tw(plF, 0.4, { Size = UDim2.fromScale(math.clamp(cur / mx, 0.03, 1), 1) })
+                    local t = math.floor(workspace.DistributedGameTime)
+                    local hh, mm = math.floor(t / 3600), math.floor(t / 60) % 60
+                    upV.Text = hh > 0 and string.format("%dh %02dm", hh, mm) or string.format("%dm %02ds", mm, t % 60)
+                    tw(upF, 0.4, { Size = UDim2.fromScale((t % 3600) / 3600 + 0.02, 1) })
                 end
                 tick()
                 task.spawn(function()
@@ -2624,13 +2682,19 @@ local Library = (function()
                         n = n + 1
                         if gui.Enabled and tab.page.Visible then
                             pcall(tick)
-                            liveDot.BackgroundTransparency = (n % 2 == 0) and 0 or 0.6
-                            if Lib.FX and n % 12 == 1 then
-                                sheen.Position = UDim2.fromScale(-0.3, 0.5)
-                                ease(sheen, 1.4, { Position = UDim2.fromScale(1.3, 0.5) }, Enum.EasingStyle.Quad, Enum.EasingDirection.InOut)
-                            end
-                            if Lib.FX and n % 16 == 1 then
-                                ease(artScale, 8, { Scale = artScale.Scale > 1.08 and 1.04 or 1.12 }, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut)
+                            npDot.BackgroundTransparency = (n % 2 == 0) and 0 or 0.7
+                            if Lib.FX then
+                                if n % 6 == 1 then
+                                    scan.Position = UDim2.fromScale(0, -0.1)
+                                    ease(scan, 1.6, { Position = UDim2.fromScale(0, 1.25) }, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut)
+                                end
+                                local out = n % 2 == 0
+                                for _, br in ipairs(brackets) do
+                                    local off = out and 0 or 4
+                                    ease(br.holder, 0.5, {
+                                        Position = UDim2.new(br.right and 1 or 0, br.right and -off or off, br.bottom and 1 or 0, br.bottom and -off or off),
+                                    }, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut)
+                                end
                             end
                         end
                     end
