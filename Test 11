@@ -794,7 +794,7 @@ local Library = (function()
 
     Lib.Folder = "ZeroX UI"
     Lib.Name = "ZeroX UI"
-    Lib.Version = "2.7"
+    Lib.Version = "2.8"
     Lib.AutoSave = false
     local function fsOk() return writefile and readfile and isfile end
     function Lib:EnsureFolder(path)
@@ -950,17 +950,11 @@ local Library = (function()
         Lib.Window = Window
 
         local bar = inst("Frame", { Name = "TopBar", BackgroundTransparency = 1, Size = UDim2.new(1, 0, 0, 64), Active = true }, body)
-        local avatar = inst("ImageLabel", {
-            Name = "Avatar", BackgroundColor3 = C.Raise, BorderSizePixel = 0, Image = LOGO_ID, ScaleType = Enum.ScaleType.Crop,
-            AnchorPoint = Vector2.new(0, 0.5), Position = UDim2.new(0, 20, 0.5, 2), Size = UDim2.fromOffset(36, 36), Active = true,
-        }, bar)
-        round(avatar)
-        glow(stroke(avatar, 0.4), 0.4)
         local brand = inst("Frame", {
-            Name = "Brand", BackgroundTransparency = 1, AnchorPoint = Vector2.new(0, 0.5), Position = UDim2.new(0, 62, 0.5, 2),
+            Name = "Brand", BackgroundTransparency = 1, AnchorPoint = Vector2.new(0, 0.5), Position = UDim2.new(0, 22, 0.5, 2),
             AutomaticSize = Enum.AutomaticSize.X, Size = UDim2.fromOffset(0, 30), Active = true,
         }, bar)
-        list(brand, Enum.FillDirection.Horizontal, 10, nil, Enum.VerticalAlignment.Center)
+        list(brand, Enum.FillDirection.Horizontal, 14, nil, Enum.VerticalAlignment.Center)
         local wordText = text({
             Name = "WordmarkText", Text = string.upper(Lib.Name):gsub(".", "%0 "):sub(1, -2), FontFace = F.Bold, TextSize = 18,
             AutomaticSize = Enum.AutomaticSize.X, Size = UDim2.fromOffset(0, 30), LayoutOrder = 1, Visible = not cfg.Wordmark,
@@ -1035,19 +1029,49 @@ local Library = (function()
                 end
             end)
         end
-        local badge = text({
-            Name = "Badge", Text = baseSub, FontFace = F.Semi, TextSize = 12, Visible = baseSub ~= "",
-            BackgroundColor3 = C.Card, BackgroundTransparency = 0, AutomaticSize = Enum.AutomaticSize.X,
-            Size = UDim2.fromOffset(0, 22), TextXAlignment = Enum.TextXAlignment.Center, LayoutOrder = 2,
+        local badge = inst("Frame", {
+            Name = "Badge", BackgroundTransparency = 1, AutomaticSize = Enum.AutomaticSize.X, Size = UDim2.fromOffset(0, 36),
+            LayoutOrder = 2, Visible = baseSub ~= "",
         }, brand)
-        round(badge, 7)
-        pad(badge, 9, 9, 0, 0)
-        local badgeLine = stroke(badge, 0.5)
+        list(badge, Enum.FillDirection.Horizontal, 12, nil, Enum.VerticalAlignment.Center)
+        local slashes = inst("Frame", { BackgroundTransparency = 1, Size = UDim2.fromOffset(16, 30), LayoutOrder = 1 }, badge)
+        local sl1 = inst("Frame", {
+            BackgroundColor3 = accent(), BorderSizePixel = 0, AnchorPoint = Vector2.new(0.5, 0.5), Position = UDim2.new(0, 4, 0.5, 0),
+            Size = UDim2.fromOffset(3, 30), Rotation = 20,
+        }, slashes)
+        local sl2 = inst("Frame", {
+            BackgroundColor3 = accent(), BorderSizePixel = 0, BackgroundTransparency = 0.55, AnchorPoint = Vector2.new(0.5, 0.5),
+            Position = UDim2.new(0, 12, 0.5, 0), Size = UDim2.fromOffset(3, 22), Rotation = 20,
+        }, slashes)
+        local stackB = inst("Frame", { BackgroundTransparency = 1, AutomaticSize = Enum.AutomaticSize.X, Size = UDim2.fromOffset(0, 36), LayoutOrder = 2 }, badge)
+        list(stackB, nil, 0, nil, Enum.VerticalAlignment.Center)
+        local capL = text({
+            Text = tostring(cfg.SubCaption or "NOW FARMING"), FontFace = F.Bold, TextSize = 10, AutomaticSize = Enum.AutomaticSize.X, Size = UDim2.fromOffset(0, 13), LayoutOrder = 1,
+        }, stackB)
+        local mapL = text({
+            Text = string.upper(baseSub), FontFace = F.Bold, TextSize = 16, AutomaticSize = Enum.AutomaticSize.X, Size = UDim2.fromOffset(0, 20), LayoutOrder = 2,
+        }, stackB)
+        local mapG = inst("UIGradient", {}, mapL)
         onAccent(function(c)
-            badge.TextColor3 = c:Lerp(Color3.new(1, 1, 1), 0.35)
-            badge.BackgroundColor3 = c:Lerp(Color3.new(0, 0, 0), 0.88)
-            badgeLine.Color = c:Lerp(Color3.new(0, 0, 0), 0.6)
-            badgeLine.Transparency = 0
+            sl1.BackgroundColor3 = c
+            sl2.BackgroundColor3 = c
+            capL.TextColor3 = c:Lerp(Color3.new(1, 1, 1), 0.25)
+            mapG.Color = ColorSequence.new({
+                ColorSequenceKeypoint.new(0, Color3.new(1, 1, 1)), ColorSequenceKeypoint.new(0.6, Color3.new(1, 1, 1)),
+                ColorSequenceKeypoint.new(1, c:Lerp(Color3.new(1, 1, 1), 0.35)),
+            })
+        end)
+        task.spawn(function()
+            local up = false
+            while not Lib.Unloaded do
+                task.wait(1.6)
+                if Lib.FX and gui.Enabled then
+                    up = not up
+                    ease(sl1, 0.8, { Size = UDim2.fromOffset(3, up and 22 or 30) }, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut)
+                    ease(sl2, 0.8, { Size = UDim2.fromOffset(3, up and 30 or 22), BackgroundTransparency = up and 0 or 0.55 }, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut)
+                    ease(sl1, 0.8, { BackgroundTransparency = up and 0.55 or 0 }, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut)
+                end
+            end
         end)
         local tools = inst("Frame", {
             Name = "Tools", BackgroundTransparency = 1, AnchorPoint = Vector2.new(1, 0.5), Position = UDim2.new(1, -16, 0.5, 2),
@@ -2513,7 +2537,7 @@ local Library = (function()
                 local npDot = inst("Frame", { BackgroundColor3 = accent(), BorderSizePixel = 0, Size = UDim2.fromOffset(6, 6), LayoutOrder = 1 }, np)
                 round(npDot)
                 local npL = text({
-                    Text = "NOW PLAYING", FontFace = F.Mono, TextSize = 11, TextColor3 = accent(), AutomaticSize = Enum.AutomaticSize.X,
+                    Text = "NOW PLAYING", FontFace = F.Bold, TextSize = 11, TextColor3 = accent(), AutomaticSize = Enum.AutomaticSize.X,
                     Size = UDim2.fromOffset(0, 14), LayoutOrder = 2,
                 }, np)
                 onAccent(function(c)
@@ -2928,7 +2952,6 @@ local Library = (function()
             end)
         end
         dragFrom(head)
-        dragFrom(avatar)
         dragFrom(brand)
         connect(grip.InputBegan, function(i)
             if not isPress(i) then return end
