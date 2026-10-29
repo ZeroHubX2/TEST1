@@ -801,7 +801,7 @@ local Library = (function()
 
     Lib.Folder = "ZeroX UI"
     Lib.Name = "ZeroX UI"
-    Lib.Version = "3.5"
+    Lib.Version = "3.6"
     Lib.AutoSave = false
     local function fsOk() return writefile and readfile and isfile end
     function Lib:EnsureFolder(path)
@@ -3072,13 +3072,13 @@ local Library = (function()
         end
 
         do
-            local H, EH = 36, 66
+            local H, EH = 42, 68
             local sb = inst("Frame", {
                 Name = "StatusBar", AnchorPoint = Vector2.new(0.5, 0), Position = UDim2.new(0.5, 0, 0, 8),
-                Size = UDim2.fromOffset(220, H), BackgroundColor3 = Color3.new(0, 0, 0), BorderSizePixel = 0, ClipsDescendants = true, Active = true,
+                Size = UDim2.fromOffset(220, H), BackgroundColor3 = Color3.fromRGB(10, 10, 12), BorderSizePixel = 0, ClipsDescendants = true, Active = true,
             }, top)
             local sbCorner = round(sb, H / 2)
-            local sbLine = stroke(sb, 0.85)
+            local sbLine = stroke(sb, 0.75)
             Lib._statusBar = sb
             local sbScale = inst("UIScale", {}, sb)
             local IS = { mode = "compact", queue = {}, w = 220, h = H }
@@ -3088,31 +3088,27 @@ local Library = (function()
                 BackgroundTransparency = 1, AnchorPoint = Vector2.new(0.5, 0.5), Position = UDim2.fromScale(0.5, 0.5),
                 AutomaticSize = Enum.AutomaticSize.X, Size = UDim2.fromOffset(0, H),
             }, compact)
-            list(crow, Enum.FillDirection.Horizontal, 10, nil, Enum.VerticalAlignment.Center)
-            local pulse = inst("Frame", { BackgroundColor3 = accent(), BorderSizePixel = 0, Size = UDim2.fromOffset(7, 7), LayoutOrder = 1 }, crow)
+            list(crow, Enum.FillDirection.Horizontal, 12, nil, Enum.VerticalAlignment.Center)
+            local pulse = inst("Frame", { BackgroundColor3 = accent(), BorderSizePixel = 0, Size = UDim2.fromOffset(8, 8), LayoutOrder = 1 }, crow)
             round(pulse)
-            local brandMark
-            if cfg.Wordmark then
-                brandMark = inst("ImageLabel", {
-                    BackgroundTransparency = 1, Image = tostring(cfg.Wordmark), ScaleType = Enum.ScaleType.Fit,
-                    Size = UDim2.fromOffset(math.floor(14 * (tonumber(cfg.WordmarkAspect) or 3) + 0.5), 14), LayoutOrder = 2,
-                }, crow)
-            else
-                brandMark = text({
-                    Text = string.upper(Lib.Name), FontFace = F.Bold, TextSize = 12, AutomaticSize = Enum.AutomaticSize.X,
-                    Size = UDim2.fromOffset(0, H), LayoutOrder = 2,
-                }, crow)
-            end
+            local brandMark = text({
+                Text = string.upper(Lib.Name), FontFace = F.Bold, TextSize = 14, TextColor3 = Color3.new(1, 1, 1),
+                AutomaticSize = Enum.AutomaticSize.X, Size = UDim2.fromOffset(0, H), LayoutOrder = 2,
+            }, crow)
+            local bmG = inst("UIGradient", {}, brandMark)
+            onAccent(function(c)
+                bmG.Color = ColorSequence.new({ ColorSequenceKeypoint.new(0, Color3.new(1, 1, 1)), ColorSequenceKeypoint.new(0.6, Color3.new(1, 1, 1)), ColorSequenceKeypoint.new(1, c:Lerp(Color3.new(1, 1, 1), 0.3)) })
+            end)
             local function sep(order)
-                return inst("Frame", { BackgroundColor3 = Color3.new(1, 1, 1), BackgroundTransparency = 0.82, BorderSizePixel = 0, Size = UDim2.fromOffset(1, 14), LayoutOrder = order }, crow)
+                return inst("Frame", { BackgroundColor3 = Color3.new(1, 1, 1), BackgroundTransparency = 0.75, BorderSizePixel = 0, Size = UDim2.fromOffset(1, 18), LayoutOrder = order }, crow)
             end
             sep(3)
             local function stat(order, unit)
                 local f2 = inst("Frame", { BackgroundTransparency = 1, AutomaticSize = Enum.AutomaticSize.X, Size = UDim2.fromOffset(0, H), LayoutOrder = order }, crow)
                 list(f2, Enum.FillDirection.Horizontal, 3, nil, Enum.VerticalAlignment.Center)
-                local v = text({ Text = "-", FontFace = F.Bold, TextSize = 13, AutomaticSize = Enum.AutomaticSize.X, Size = UDim2.fromOffset(0, H), LayoutOrder = 1 }, f2)
+                local v = text({ Text = "-", FontFace = F.Bold, TextSize = 16, AutomaticSize = Enum.AutomaticSize.X, Size = UDim2.fromOffset(0, H), LayoutOrder = 1 }, f2)
                 if unit then
-                    text({ Text = unit, FontFace = F.Semi, TextSize = 10, TextColor3 = C.Dim, AutomaticSize = Enum.AutomaticSize.X, Size = UDim2.fromOffset(0, H), LayoutOrder = 2 }, f2)
+                    text({ Text = unit, FontFace = F.Bold, TextSize = 11, TextColor3 = C.Sub, AutomaticSize = Enum.AutomaticSize.X, Size = UDim2.fromOffset(0, H), LayoutOrder = 2 }, f2)
                 end
                 return v
             end
@@ -3122,16 +3118,16 @@ local Library = (function()
             S.clock = stat(6, nil)
             sep(7)
             local actPill = inst("Frame", {
-                BackgroundColor3 = accent(), BorderSizePixel = 0, AutomaticSize = Enum.AutomaticSize.X, Size = UDim2.fromOffset(0, 20), LayoutOrder = 8,
+                BackgroundColor3 = accent(), BorderSizePixel = 0, AutomaticSize = Enum.AutomaticSize.X, Size = UDim2.fromOffset(0, 24), LayoutOrder = 8,
             }, crow)
             round(actPill)
             pad(actPill, 8, 8, 0, 0)
             list(actPill, Enum.FillDirection.Horizontal, 4, nil, Enum.VerticalAlignment.Center)
-            local actIcon = icon("bolt", 11, actPill, Color3.new(1, 1, 1))
+            local actIcon = icon("bolt", 13, actPill, Color3.new(1, 1, 1))
             actIcon.LayoutOrder = 1
-            local actL = text({ Text = "0", FontFace = F.Bold, TextSize = 12, TextColor3 = Color3.new(1, 1, 1), AutomaticSize = Enum.AutomaticSize.X, Size = UDim2.fromOffset(0, 20), LayoutOrder = 2 }, actPill)
+            local actL = text({ Text = "0", FontFace = F.Bold, TextSize = 14, TextColor3 = Color3.new(1, 1, 1), AutomaticSize = Enum.AutomaticSize.X, Size = UDim2.fromOffset(0, 24), LayoutOrder = 2 }, actPill)
             S.run = stat(9, nil)
-            S.run.TextColor3 = C.Sub
+            S.run.TextColor3 = Color3.fromRGB(190, 190, 200)
 
             local exp = inst("CanvasGroup", { Name = "Expanded", BackgroundTransparency = 1, Size = UDim2.fromScale(1, 1), GroupTransparency = 1, Visible = false }, sb)
             local eIconBg = inst("Frame", {
