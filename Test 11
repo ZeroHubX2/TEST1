@@ -267,11 +267,13 @@ local Library = (function()
         Lib._spinA = ((Lib._spinA or 0) + dt * 50) % 360
         for _, g in ipairs(Lib._spin) do g.Rotation = Lib._spinA end
         if Lib._fxStep then Lib._fxStep(dt) end
+        if Lib._tabStep then Lib._tabStep(dt) end
     end)
     function Lib:SetEffects(on)
         Lib.FX = on and true or false
         for _, e in ipairs(Lib._glows) do pcall(e.paint) end
         if Lib._fxLayer then Lib._fxLayer.Visible = Lib.FX end
+        if not Lib.FX and Lib._wipeHide then Lib._wipeHide() end
     end
 
     local gui = inst("ScreenGui", { Name = "ZeroXUI", ResetOnSpawn = false, IgnoreGuiInset = true, DisplayOrder = 1000000, ZIndexBehavior = Enum.ZIndexBehavior.Sibling })
@@ -374,6 +376,17 @@ local Library = (function()
         connect(hit.MouseButton1Click, function()
             sw.Value = not sw.Value
             paint(true)
+            if sw.Value and Lib.FX then
+                local ring = inst("Frame", {
+                    AnchorPoint = Vector2.new(0.5, 0.5), Position = UDim2.new(1, -12, 0.5, 0), Size = UDim2.fromOffset(18, 18),
+                    BackgroundTransparency = 1, ZIndex = 3,
+                }, trk)
+                round(ring)
+                local rs = inst("UIStroke", { Color = accent(), Thickness = 2 }, ring)
+                ease(ring, 0.45, { Size = UDim2.fromOffset(46, 46) }, Enum.EasingStyle.Quad)
+                ease(rs, 0.45, { Transparency = 1, Thickness = 0.5 }, Enum.EasingStyle.Quad)
+                task.delay(0.47, function() pcall(function() ring:Destroy() end) end)
+            end
             changed(sw.Value)
         end)
         return sw
@@ -457,7 +470,7 @@ local Library = (function()
         local cst = stroke(f, 0.92)
         pad(f, 18, 18, 6, 6)
         list(f)
-        local card = { frame = f, rows = {}, n = 0, search = string.lower(tostring(title or "")) }
+        local card = { frame = f, rows = {}, n = 0, search = string.lower(tostring(title or "")), titleText = title and tostring(title) or nil, stroke = cst }
         card.scale = inst("UIScale", {}, f)
         connect(f.MouseEnter, function()
             if Lib.FX then tw(cst, 0.2, { Color = accent(), Transparency = 0.55 }) end
@@ -567,8 +580,10 @@ local Library = (function()
             if Lib.FX and fit then
                 Lib._closing = true
                 Lib._animWin = true
-                ease(fit, 0.16, { Scale = base * 0.88 }, Enum.EasingStyle.Quad, Enum.EasingDirection.In)
-                task.delay(0.16, function()
+                local dur = Lib._wipe and 0.34 or 0.16
+                if Lib._wipe then Lib._wipe(false, dur) end
+                ease(fit, dur, { Scale = base * 0.94 }, Enum.EasingStyle.Quad, Enum.EasingDirection.In)
+                task.delay(dur, function()
                     if not Lib._closing then return end
                     Lib._closing = false
                     Lib._animWin = false
@@ -584,9 +599,10 @@ local Library = (function()
             gui.Enabled = true
             if Lib.FX and fit then
                 Lib._animWin = true
-                fit.Scale = base * 0.88
-                ease(fit, 0.34, { Scale = base }, Enum.EasingStyle.Back)
-                task.delay(0.35, function() Lib._animWin = false end)
+                fit.Scale = base * 0.9
+                ease(fit, 0.45, { Scale = base }, Enum.EasingStyle.Back)
+                if Lib._wipe then Lib._wipe(true, 0.6) end
+                task.delay(0.46, function() Lib._animWin = false end)
             end
         end
         if Lib.OnToggle then pcall(Lib.OnToggle) end
@@ -714,6 +730,45 @@ local Library = (function()
         glow(stroke(body, 0.9), 0.9)
         local fit = inst("UIScale", { Name = "ZX_Fit" }, body)
         do
+            local clip = inst("Frame", { Name = "Wipe", BackgroundTransparency = 1, Size = UDim2.fromScale(1, 1), ClipsDescendants = true, ZIndex = 40, Visible = false }, body)
+            local cover = inst("Frame", { BackgroundColor3 = C.Bg, BorderSizePixel = 0, Size = UDim2.fromScale(1, 1), ZIndex = 40 }, clip)
+            round(cover, 18)
+            local trail = inst("Frame", { BackgroundColor3 = accent(), BackgroundTransparency = 0.2, BorderSizePixel = 0, Size = UDim2.new(0, 70, 1, 0), ZIndex = 41 }, cover)
+            inst("UIGradient", { Transparency = NumberSequence.new(0, 1) }, trail)
+            local edge = inst("Frame", { BackgroundColor3 = accent(), BorderSizePixel = 0, Size = UDim2.new(0, 3, 1, 0), ZIndex = 42 }, cover)
+            local mark = inst("ImageLabel", {
+                BackgroundTransparency = 1, Image = LOGO_ID, ScaleType = Enum.ScaleType.Fit, AnchorPoint = Vector2.new(0.5, 0.5),
+                Position = UDim2.fromScale(0.5, 0.5), Size = UDim2.fromOffset(64, 64), ZIndex = 42, ImageTransparency = 0.2,
+            }, cover)
+            round(mark)
+            onAccent(function(c)
+                edge.BackgroundColor3 = c
+                trail.BackgroundColor3 = c
+            end)
+            local cur
+            Lib._wipeHide = function()
+                if cur then cur:Cancel() end
+                clip.Visible = false
+            end
+            Lib._wipe = function(open, dur)
+                if cur then cur:Cancel() end
+                mark.Image = LOGO_ID
+                clip.Visible = true
+                if open then
+                    cover.Position = UDim2.fromScale(0, 0)
+                    mark.Rotation = -90
+                    ease(mark, dur * 0.5, { Rotation = 0 }, Enum.EasingStyle.Back)
+                    cur = ease(cover, dur, { Position = UDim2.fromScale(1.08, 0) }, Enum.EasingStyle.Quart, Enum.EasingDirection.InOut)
+                    task.delay(dur + 0.02, function()
+                        if cover.Position.X.Scale > 1.05 then clip.Visible = false end
+                    end)
+                else
+                    cover.Position = UDim2.fromScale(1.08, 0)
+                    cur = ease(cover, dur, { Position = UDim2.fromScale(0, 0) }, Enum.EasingStyle.Quart, Enum.EasingDirection.In)
+                end
+            end
+        end
+        do
             local layer = inst("Frame", { Name = "FX", BackgroundTransparency = 1, Size = UDim2.fromScale(1, 1), ZIndex = 0, ClipsDescendants = true }, body)
             Lib._fxLayer = layer
             local parts = {}
@@ -754,8 +809,7 @@ local Library = (function()
             AnchorPoint = Vector2.new(0, 0.5), Position = UDim2.new(0, 20, 0.5, 2), Size = UDim2.fromOffset(36, 36), Active = true,
         }, bar)
         round(avatar)
-        local avStroke = stroke(avatar, 0.4)
-        onAccent(function(c) avStroke.Color = c end)
+        glow(stroke(avatar, 0.4), 0.4)
         local brand = inst("Frame", {
             Name = "Brand", BackgroundTransparency = 1, AnchorPoint = Vector2.new(0, 0.5), Position = UDim2.new(0, 66, 0.5, 2),
             AutomaticSize = Enum.AutomaticSize.X, Size = UDim2.fromOffset(0, 30), Active = true,
@@ -801,19 +855,6 @@ local Library = (function()
             AutomaticSize = Enum.AutomaticSize.X, Size = UDim2.fromOffset(0, 36),
         }, bar)
         list(tools, Enum.FillDirection.Horizontal, 4, nil, Enum.VerticalAlignment.Center)
-        local search = inst("Frame", {
-            Name = "Search", BackgroundColor3 = C.Card, BorderSizePixel = 0, Size = UDim2.fromOffset(0, 34),
-            ClipsDescendants = true, LayoutOrder = 1, Visible = false,
-        }, tools)
-        round(search, 10)
-        local searchLine = stroke(search, 0.9)
-        local sbox = inst("TextBox", {
-            BackgroundTransparency = 1, Position = UDim2.fromOffset(12, 0), Size = UDim2.new(1, -24, 1, 0), FontFace = F.Med, TextSize = 14,
-            TextColor3 = C.Text, PlaceholderText = "Search", PlaceholderColor3 = C.Sub, Text = "", ClearTextOnFocus = false,
-            TextXAlignment = Enum.TextXAlignment.Left, TextTruncate = Enum.TextTruncate.AtEnd,
-        }, search)
-        local searchBtn = iconButton("search", tools)
-        searchBtn.LayoutOrder = 2
         local saveBtn = iconButton("save", tools)
         saveBtn.LayoutOrder = 3
         local dots = inst("Frame", { BackgroundTransparency = 1, Size = UDim2.fromOffset(52, 36), LayoutOrder = 4 }, tools)
@@ -834,23 +875,6 @@ local Library = (function()
             connect(d.MouseLeave, function() tw(d, 0.15, { Size = base }) end)
         end
         connect(minBtn.MouseButton1Click, function() Lib:ToggleUI() end)
-        local function openSearch(on)
-            W.searchOpen = on
-            if on then
-                search.Visible = true
-                ease(search, 0.3, { Size = UDim2.fromOffset(W.searchW or 200, 34) })
-                task.delay(0.05, function() sbox:CaptureFocus() end)
-            else
-                ease(search, 0.25, { Size = UDim2.fromOffset(0, 34) })
-                task.delay(0.26, function() if not W.searchOpen then search.Visible = false end end)
-            end
-        end
-        connect(searchBtn.MouseButton1Click, function() openSearch(not W.searchOpen) end)
-        connect(sbox.Focused, function() tw(searchLine, 0.2, { Color = accent(), Transparency = 0.2 }) end)
-        connect(sbox.FocusLost, function()
-            tw(searchLine, 0.25, { Color = C.Line, Transparency = 0.9 })
-            if sbox.Text == "" then openSearch(false) end
-        end)
 
         local tabsWrap = inst("Frame", {
             Name = "TabsWrap", BackgroundTransparency = 1, BorderSizePixel = 0,
@@ -859,10 +883,29 @@ local Library = (function()
         round(tabsWrap, 12)
         stroke(tabsWrap, 0.92)
         local tabsBar = inst("ScrollingFrame", {
-            Name = "Tabs", BackgroundTransparency = 1, BorderSizePixel = 0, Position = UDim2.fromOffset(5, 0), Size = UDim2.new(1, -10, 1, 0),
+            Name = "Tabs", BackgroundTransparency = 1, BorderSizePixel = 0, Position = UDim2.fromOffset(5, 0), Size = UDim2.new(1, -51, 1, 0),
             CanvasSize = UDim2.new(), AutomaticCanvasSize = Enum.AutomaticSize.X, ScrollingDirection = Enum.ScrollingDirection.X,
             ScrollBarThickness = 0, ElasticBehavior = Enum.ElasticBehavior.WhenScrollable,
         }, tabsWrap)
+        local findBtn = inst("TextButton", {
+            Name = "Find", Text = "", AutoButtonColor = false, BackgroundColor3 = C.Raise, BorderSizePixel = 0,
+            AnchorPoint = Vector2.new(1, 0.5), Position = UDim2.new(1, -6, 0.5, 0), Size = UDim2.fromOffset(36, 36), ZIndex = 3,
+        }, tabsWrap)
+        round(findBtn, 10)
+        local findLine = stroke(findBtn, 0.9)
+        local fic = icon("search", 17, findBtn, C.Sub)
+        fic.AnchorPoint = Vector2.new(0.5, 0.5)
+        fic.Position = UDim2.fromScale(0.5, 0.5)
+        fic.ZIndex = 3
+        press(findBtn)
+        connect(findBtn.MouseEnter, function()
+            tw(fic, 0.15, { ImageColor3 = C.Text, Rotation = Lib.FX and -12 or 0 })
+            tw(findLine, 0.15, { Color = accent(), Transparency = 0.3 })
+        end)
+        connect(findBtn.MouseLeave, function()
+            tw(fic, 0.2, { ImageColor3 = C.Sub, Rotation = 0 })
+            tw(findLine, 0.2, { Color = C.Line, Transparency = 0.9 })
+        end)
         local tabsRow = inst("Frame", { Name = "Row", BackgroundTransparency = 1, AutomaticSize = Enum.AutomaticSize.X, Size = UDim2.new(0, 0, 1, 0), ZIndex = 2 }, tabsBar)
         list(tabsRow, Enum.FillDirection.Horizontal, 4, nil, Enum.VerticalAlignment.Center)
         local ind = inst("Frame", {
@@ -875,17 +918,31 @@ local Library = (function()
             ind.BackgroundColor3 = c:Lerp(Color3.new(0, 0, 0), 0.86)
             indLine.Color = c
         end)
+        function W.indTarget(tab)
+            local s2 = math.max(fit.Scale, 0.01)
+            return (tab.pill.AbsolutePosition.X - tabsRow.AbsolutePosition.X) / s2, tab.pill.AbsoluteSize.X / s2
+        end
         function W.moveIndicator(tab, anim)
             if not tab or not tab.pill then return end
-            local s = math.max(fit.Scale, 0.01)
-            local x = (tab.pill.AbsolutePosition.X - tabsRow.AbsolutePosition.X) / s
-            local goal = { Position = UDim2.new(0, x, 0.5, 0), Size = UDim2.fromOffset(tab.pill.AbsoluteSize.X / s, 38) }
-            if anim and Lib.FX then
-                ease(ind, 0.35, goal)
-            else
-                ind.Position = goal.Position
-                ind.Size = goal.Size
+            local x, w = W.indTarget(tab)
+            if not (anim and Lib.FX) or not W.ix then
+                W.ix, W.iw, W.vx, W.vw = x, w, 0, 0
+                ind.Position = UDim2.new(0, x, 0.5, 0)
+                ind.Size = UDim2.fromOffset(w, 38)
             end
+        end
+        Lib._tabStep = function(dt)
+            local tab = W.active
+            if not (tab and tab.pill and W.ix and gui.Enabled) then return end
+            dt = math.min(dt, 1 / 30)
+            local x, w = W.indTarget(tab)
+            W.vx = W.vx + ((x - W.ix) * 320 - W.vx * 26) * dt
+            W.vw = W.vw + ((w - W.iw) * 320 - W.vw * 26) * dt
+            W.ix = W.ix + W.vx * dt
+            W.iw = W.iw + W.vw * dt
+            local stretch = math.min(math.abs(W.vx) * 0.04, 26)
+            ind.Position = UDim2.new(0, W.ix - (W.vx > 0 and stretch or 0), 0.5, 0)
+            ind.Size = UDim2.fromOffset(math.max(W.iw + stretch, 0), 38)
         end
         connect(tabsRow:GetPropertyChangedSignal("AbsoluteSize"), function()
             if W.active then W.moveIndicator(W.active, false) end
@@ -901,7 +958,7 @@ local Library = (function()
             local a = inst("TextButton", {
                 Name = dir < 0 and "Left" or "Right", Text = "", AutoButtonColor = false, BackgroundColor3 = C.Raise,
                 BackgroundTransparency = 0.15, BorderSizePixel = 0, AnchorPoint = Vector2.new(dir < 0 and 0 or 1, 0.5),
-                Position = UDim2.new(dir < 0 and 0 or 1, dir < 0 and 5 or -5, 0.5, 0), Size = UDim2.fromOffset(34, 34),
+                Position = UDim2.new(dir < 0 and 0 or 1, dir < 0 and 5 or -46, 0.5, 0), Size = UDim2.fromOffset(34, 34),
                 Visible = false, ZIndex = 3,
             }, tabsWrap)
             round(a)
@@ -922,7 +979,7 @@ local Library = (function()
             if over ~= W.over then
                 W.over = over
                 tabsBar.Position = UDim2.fromOffset(over and 44 or 5, 0)
-                tabsBar.Size = UDim2.new(1, over and -88 or -10, 1, 0)
+                tabsBar.Size = UDim2.new(1, over and -128 or -51, 1, 0)
             end
             local maxX = math.max((tabsBar.AbsoluteCanvasSize.X - tabsBar.AbsoluteWindowSize.X) / s, 0)
             W.arrows[1].Visible = over and tabsBar.CanvasPosition.X > 2
@@ -998,8 +1055,6 @@ local Library = (function()
         local function layoutHeader()
             local w = body.Size.X.Offset
             local compact = body.Size.Y.Offset < 480
-            W.searchW = w >= 700 and 220 or 150
-            if W.searchOpen then search.Size = UDim2.fromOffset(W.searchW, 34) end
             badge.Visible = baseSub ~= "" and w >= 560
             made.Visible = w >= 520
             bar.Size = UDim2.new(1, 0, 0, compact and 54 or 64)
@@ -1070,7 +1125,7 @@ local Library = (function()
         end
 
         local function applySearch(tab)
-            local q = string.lower(sbox.Text or "")
+            local q = string.lower(W.query or "")
             for _, card in ipairs(tab.cards) do
                 local cardHit = q ~= "" and card.search:find(q, 1, true) ~= nil
                 local any = false
@@ -1083,9 +1138,6 @@ local Library = (function()
             end
             relayout(tab)
         end
-        connect(sbox:GetPropertyChangedSignal("Text"), function()
-            if W.active then applySearch(W.active) end
-        end)
 
         local function select(tab)
             if W.active == tab then return end
@@ -1105,8 +1157,12 @@ local Library = (function()
                 ease(tab.stack, 0.4, { Position = UDim2.fromOffset(22, 0) })
                 for i, card in ipairs(tab.cards) do
                     if i > 10 then break end
-                    card.scale.Scale = 0.94
-                    task.delay((i - 1) * 0.045, function() ease(card.scale, 0.4, { Scale = 1 }, Enum.EasingStyle.Back) end)
+                    card.scale.Scale = 0.92
+                    card.frame.Rotation = (i % 2 == 0) and 1.6 or -1.6
+                    task.delay((i - 1) * 0.05, function()
+                        ease(card.scale, 0.5, { Scale = 1 }, Enum.EasingStyle.Back)
+                        ease(card.frame, 0.5, { Rotation = 0 }, Enum.EasingStyle.Back)
+                    end)
                 end
                 local ty, dy = titleL.Position.Y.Offset, descL.Position.Y.Offset
                 titleL.TextTransparency, descL.TextTransparency = 1, 1
@@ -1123,6 +1179,27 @@ local Library = (function()
                 titleL.Text = tostring(tab.Title or "")
             end
             descL.Text = tostring(tab.Desc or "")
+            if Lib.FX then
+                W.typeTok = (W.typeTok or 0) + 1
+                local my = W.typeTok
+                local full = utf8.len(titleL.Text) or #titleL.Text
+                titleL.MaxVisibleGraphemes = 0
+                titleL.TextColor3 = accent()
+                task.spawn(function()
+                    local steps = math.clamp(full, 1, 40)
+                    for i2 = 1, steps do
+                        if W.typeTok ~= my then return end
+                        titleL.MaxVisibleGraphemes = math.ceil(full * i2 / steps)
+                        task.wait(0.014)
+                    end
+                    if W.typeTok ~= my then return end
+                    titleL.MaxVisibleGraphemes = -1
+                    tw(titleL, 0.35, { TextColor3 = C.Text })
+                end)
+            else
+                titleL.MaxVisibleGraphemes = -1
+                titleL.TextColor3 = C.Text
+            end
             closePopup()
             applySearch(tab)
             task.defer(function()
@@ -1139,6 +1216,115 @@ local Library = (function()
                 if W.active == tab and not Lib.Unloaded then relayout(tab) end
             end)
         end
+
+        function W.jumpTo(e)
+            select(e.tab)
+            task.delay(0.35, function()
+                local page = e.tab.page
+                local s2 = math.max(fit.Scale, 0.01)
+                local y = (e.row.frame.AbsolutePosition.Y - page.AbsolutePosition.Y) / s2 + page.CanvasPosition.Y - 24
+                tw(page, 0.35, { CanvasPosition = Vector2.new(0, math.max(y, 0)) })
+                local cs = e.card.stroke
+                if cs then
+                    cs.Color = accent()
+                    cs.Transparency = 0
+                    task.delay(1, function() tw(cs, 0.6, { Color = C.Line, Transparency = 0.92 }) end)
+                end
+                local t = e.row.title
+                t.TextColor3 = accent()
+                task.delay(1, function() tw(t, 0.6, { TextColor3 = C.Text }) end)
+            end)
+        end
+        function W.openPalette()
+            local f = openPopup(nil, 500, 400)
+            pad(f, 14, 14, 14, 14)
+            local qbox = inst("TextBox", {
+                BackgroundColor3 = C.Raise, BorderSizePixel = 0, Size = UDim2.new(1, 0, 0, 42), FontFace = F.Med, TextSize = 15,
+                TextColor3 = C.Text, PlaceholderText = "Search every setting", PlaceholderColor3 = C.Sub, Text = "",
+                ClearTextOnFocus = false, TextXAlignment = Enum.TextXAlignment.Left,
+            }, f)
+            round(qbox, 10)
+            pad(qbox, 40, 12, 0, 0)
+            local qs = stroke(qbox, 0.4)
+            qs.Color = accent()
+            local qi = icon("search", 16, qbox, C.Sub)
+            qi.AnchorPoint = Vector2.new(0, 0.5)
+            qi.Position = UDim2.new(0, -28, 0.5, 0)
+            local res = inst("ScrollingFrame", {
+                BackgroundTransparency = 1, BorderSizePixel = 0, Position = UDim2.fromOffset(0, 52), Size = UDim2.new(1, 0, 1, -52),
+                CanvasSize = UDim2.new(), AutomaticCanvasSize = Enum.AutomaticSize.Y, ScrollingDirection = Enum.ScrollingDirection.Y,
+                ScrollBarThickness = 3, ScrollBarImageColor3 = C.Dim,
+            }, f)
+            list(res, nil, 4)
+            local hint = text({
+                Text = "Type to search every tab", FontFace = F.Med, TextSize = 13, TextColor3 = C.Dim, Size = UDim2.new(1, 0, 0, 36),
+                TextXAlignment = Enum.TextXAlignment.Center, LayoutOrder = 0,
+            }, res)
+            local index = {}
+            for _, tb in ipairs(Window.Tabs) do
+                for _, cd in ipairs(tb.cards) do
+                    for _, r in ipairs(cd.rows) do
+                        if r.title and r.search and r.title.Text ~= "" then
+                            index[#index + 1] = { tab = tb, card = cd, row = r }
+                        end
+                    end
+                end
+            end
+            local function render(q)
+                for _, ch in ipairs(res:GetChildren()) do
+                    if ch:IsA("TextButton") then ch:Destroy() end
+                end
+                q = string.lower(q or "")
+                hint.Text = "Type to search every tab"
+                hint.Visible = q == ""
+                if q == "" then return end
+                local n = 0
+                for _, e in ipairs(index) do
+                    if n >= 40 then break end
+                    local hay = e.row.search .. " " .. string.lower(tostring(e.tab.Title or "")) .. " " .. (e.card.search or "")
+                    if hay:find(q, 1, true) then
+                        n = n + 1
+                        local b = inst("TextButton", {
+                            Text = "", AutoButtonColor = false, BackgroundColor3 = C.Hover, BackgroundTransparency = 1, BorderSizePixel = 0,
+                            Size = UDim2.new(1, -4, 0, 50), LayoutOrder = n,
+                        }, res)
+                        round(b, 10)
+                        text({
+                            Text = e.row.title.Text, FontFace = F.Semi, TextSize = 14, Position = UDim2.fromOffset(12, 7),
+                            Size = UDim2.new(1, -44, 0, 18), TextTruncate = Enum.TextTruncate.AtEnd,
+                        }, b)
+                        text({
+                            Text = tostring(e.tab.Title or "") .. (e.card.titleText and ("  ›  " .. e.card.titleText) or ""),
+                            FontFace = F.Med, TextSize = 12, TextColor3 = C.Sub, Position = UDim2.fromOffset(12, 27),
+                            Size = UDim2.new(1, -44, 0, 16), TextTruncate = Enum.TextTruncate.AtEnd,
+                        }, b)
+                        local cv = icon("chevron", 12, b, C.Dim)
+                        cv.Rotation = -90
+                        cv.AnchorPoint = Vector2.new(1, 0.5)
+                        cv.Position = UDim2.new(1, -14, 0.5, 0)
+                        b.MouseEnter:Connect(function() b.BackgroundTransparency = 0.3 end)
+                        b.MouseLeave:Connect(function() b.BackgroundTransparency = 1 end)
+                        b.MouseButton1Click:Connect(function()
+                            closePopup()
+                            W.jumpTo(e)
+                        end)
+                    end
+                end
+                if n == 0 then
+                    hint.Text = 'Nothing matches "' .. q .. '"'
+                    hint.Visible = true
+                end
+            end
+            qbox:GetPropertyChangedSignal("Text"):Connect(function() render(qbox.Text) end)
+            task.defer(function() pcall(function() qbox:CaptureFocus() end) end)
+        end
+        connect(findBtn.MouseButton1Click, function() W.openPalette() end)
+        connect(UIS.InputBegan, function(i, gp)
+            if gp or not gui.Enabled then return end
+            if i.KeyCode == Enum.KeyCode.F and (UIS:IsKeyDown(Enum.KeyCode.LeftControl) or UIS:IsKeyDown(Enum.KeyCode.RightControl)) then
+                W.openPalette()
+            end
+        end)
 
         function Window:AddSection(title)
             if #Window.Tabs == 0 then return end
@@ -1748,54 +1934,85 @@ local Library = (function()
             end
 
             function tab:AddGameCard(gcfg)
+                gcfg = gcfg or {}
                 local card = newCard(tab, nil)
                 tab.card = card
                 card.n = card.n + 1
+                local Plr = game:GetService("Players")
                 local wrap = inst("Frame", { Name = "Game", BackgroundTransparency = 1, AutomaticSize = Enum.AutomaticSize.Y, Size = UDim2.fromScale(1, 0), LayoutOrder = card.n }, card.frame)
-                pad(wrap, 0, 0, 16, 16)
-                list(wrap, nil, 14)
-                local topRow = inst("Frame", { BackgroundTransparency = 1, AutomaticSize = Enum.AutomaticSize.Y, Size = UDim2.new(1, 0, 0, 76), LayoutOrder = 1 }, wrap)
+                pad(wrap, 0, 0, 14, 14)
+                list(wrap, nil, 12)
+                local topRow = inst("Frame", { BackgroundTransparency = 1, AutomaticSize = Enum.AutomaticSize.Y, Size = UDim2.new(1, 0, 0, 68), LayoutOrder = 1 }, wrap)
                 local thumb = inst("ImageLabel", {
-                    BackgroundColor3 = C.Raise, BorderSizePixel = 0, Size = UDim2.fromOffset(76, 76), ScaleType = Enum.ScaleType.Crop,
+                    BackgroundColor3 = C.Raise, BorderSizePixel = 0, Size = UDim2.fromOffset(68, 68), ScaleType = Enum.ScaleType.Crop,
                     Image = "rbxthumb://type=GameIcon&id=" .. tostring(game.GameId) .. "&w=150&h=150",
                 }, topRow)
-                round(thumb, 16)
-                stroke(thumb, 0.9)
-                local info = inst("Frame", { BackgroundTransparency = 1, AutomaticSize = Enum.AutomaticSize.Y, Position = UDim2.fromOffset(92, 0), Size = UDim2.new(1, -92, 0, 0) }, topRow)
-                list(info, nil, 4)
+                round(thumb, 14)
+                glow(stroke(thumb, 0.85), 0.85)
+                local info = inst("Frame", { BackgroundTransparency = 1, AutomaticSize = Enum.AutomaticSize.Y, Position = UDim2.fromOffset(82, 0), Size = UDim2.new(1, -82, 0, 0) }, topRow)
+                list(info, nil, 3)
                 local nameL = text({
-                    Text = "Loading...", FontFace = F.Bold, TextSize = 18, TextWrapped = true,
+                    Text = "Loading...", FontFace = F.Bold, TextSize = 16, TextWrapped = true,
                     AutomaticSize = Enum.AutomaticSize.Y, Size = UDim2.fromScale(1, 0), LayoutOrder = 1,
                 }, info)
                 local byL = text({
-                    Text = "", FontFace = F.Med, TextSize = 13, TextColor3 = C.Sub, TextTruncate = Enum.TextTruncate.AtEnd,
-                    Size = UDim2.new(1, 0, 0, 18), LayoutOrder = 2,
+                    Text = "", FontFace = F.Med, TextSize = 12, TextColor3 = C.Sub, TextTruncate = Enum.TextTruncate.AtEnd,
+                    Size = UDim2.new(1, 0, 0, 16), LayoutOrder = 2,
                 }, info)
-                local chips = inst("Frame", { BackgroundTransparency = 1, AutomaticSize = Enum.AutomaticSize.Y, Size = UDim2.fromScale(1, 0), LayoutOrder = 3 }, info)
-                pad(chips, 0, 0, 4, 0)
-                local cl = list(chips, Enum.FillDirection.Horizontal, 6, nil, Enum.VerticalAlignment.Center)
-                pcall(function() cl.Wraps = true end)
+                local chips = inst("Frame", { BackgroundTransparency = 1, Size = UDim2.new(1, 0, 0, 30), ClipsDescendants = true, LayoutOrder = 3 }, info)
+                list(chips, Enum.FillDirection.Horizontal, 5, nil, Enum.VerticalAlignment.Bottom)
                 local function chip(order)
                     local l = text({
-                        Text = "", FontFace = F.Semi, TextSize = 12, TextColor3 = C.Sub, BackgroundColor3 = C.Raise, BackgroundTransparency = 0.3,
-                        AutomaticSize = Enum.AutomaticSize.X, Size = UDim2.fromOffset(0, 26), TextXAlignment = Enum.TextXAlignment.Center, LayoutOrder = order,
+                        Text = "", FontFace = F.Semi, TextSize = 12, TextColor3 = C.Sub, BackgroundColor3 = C.Raise, BackgroundTransparency = 0,
+                        AutomaticSize = Enum.AutomaticSize.X, Size = UDim2.fromOffset(0, 24), TextXAlignment = Enum.TextXAlignment.Center, LayoutOrder = order,
                     }, chips)
                     round(l)
-                    pad(l, 11, 11, 0, 0)
+                    pad(l, 9, 9, 0, 0)
                     return l
                 end
-                local idL = chip(1)
-                idL.Text = "ID " .. tostring(game.PlaceId)
-                local plL = chip(2)
-                local pgL = chip(3)
-                inst("Frame", { Name = "Line", BackgroundColor3 = C.Line, BackgroundTransparency = 0.93, BorderSizePixel = 0, Size = UDim2.new(1, 0, 0, 1), LayoutOrder = 2 }, wrap)
-                local btns = inst("Frame", { BackgroundTransparency = 1, AutomaticSize = Enum.AutomaticSize.Y, Size = UDim2.fromScale(1, 0), LayoutOrder = 3 }, wrap)
-                local bl = list(btns, Enum.FillDirection.Horizontal, 8, nil, Enum.VerticalAlignment.Center)
-                pcall(function() bl.Wraps = true end)
-                for i, b in ipairs(gcfg.Buttons or {}) do
-                    makeButton(btns, b.Title, function()
+                local plL = chip(1)
+                local pgL = chip(2)
+                local upL = chip(3)
+                local idRow = inst("TextButton", {
+                    Text = "", AutoButtonColor = false, BackgroundColor3 = C.Raise, BackgroundTransparency = 0, BorderSizePixel = 0,
+                    Size = UDim2.new(1, 0, 0, 30), LayoutOrder = 2,
+                }, wrap)
+                round(idRow, 9)
+                stroke(idRow, 0.93)
+                local idL = text({
+                    Text = "Place " .. tostring(game.PlaceId) .. "   ·   Server " .. string.sub(tostring(game.JobId), 1, 8),
+                    FontFace = F.Mono, TextSize = 12, TextColor3 = C.Sub, Position = UDim2.fromOffset(12, 0), Size = UDim2.new(1, -70, 1, 0),
+                    TextTruncate = Enum.TextTruncate.AtEnd,
+                }, idRow)
+                local copyL = text({
+                    Text = "Copy", FontFace = F.Semi, TextSize = 12, AnchorPoint = Vector2.new(1, 0.5), Position = UDim2.new(1, -12, 0.5, 0),
+                    Size = UDim2.fromOffset(50, 20), TextXAlignment = Enum.TextXAlignment.Right,
+                }, idRow)
+                onAccent(function(c) copyL.TextColor3 = c:Lerp(Color3.new(1, 1, 1), 0.25) end)
+                press(idRow)
+                connect(idRow.MouseButton1Click, function()
+                    local ok = pcall(function() (setclipboard or toclipboard)(tostring(game.JobId)) end)
+                    copyL.Text = ok and "Copied" or "No clipboard"
+                    task.delay(1.4, function() copyL.Text = "Copy" end)
+                end)
+                local btns = inst("Frame", { BackgroundTransparency = 1, Size = UDim2.new(1, 0, 0, 34), LayoutOrder = 3 }, wrap)
+                list(btns, Enum.FillDirection.Horizontal, 8, nil, Enum.VerticalAlignment.Center)
+                local list2 = gcfg.Buttons or {}
+                local nb = math.max(#list2, 1)
+                for i, b in ipairs(list2) do
+                    local bt = makeButton(btns, b.Title, function()
                         if b.Callback then task.spawn(safe, b.Callback) end
-                    end, b.Danger and Color3.fromRGB(190, 60, 70) or nil).LayoutOrder = i
+                    end, b.Danger and Color3.fromRGB(200, 30, 44) or nil)
+                    bt.AutomaticSize = Enum.AutomaticSize.None
+                    bt.Size = UDim2.new(1 / nb, -math.floor(8 * (nb - 1) / nb + 0.5), 0, 34)
+                    bt.TextTruncate = Enum.TextTruncate.AtEnd
+                    bt.LayoutOrder = i
+                    for _, pd in ipairs(bt:GetChildren()) do
+                        if pd:IsA("UIPadding") then
+                            pd.PaddingLeft = UDim.new(0, 6)
+                            pd.PaddingRight = UDim.new(0, 6)
+                        end
+                    end
                 end
                 local entry = { frame = wrap, search = "game server rejoin hop leave" }
                 table.insert(card.rows, entry)
@@ -1811,14 +2028,33 @@ local Library = (function()
                     entry.search = string.lower("game server rejoin hop leave " .. nameL.Text .. " " .. byL.Text)
                 end)
                 local h = {}
-                function h:Set(s)
-                    if s.players then plL.Text = "Players " .. tostring(s.players) end
-                    if s.ping then
-                        pgL.Text = "Ping " .. tostring(s.ping) .. " ms"
-                        pgL.TextColor3 = s.pingColor or C.Good
+                function h:Set(st)
+                    if st.players then plL.Text = "Players " .. tostring(st.players) end
+                    if st.ping then
+                        pgL.Text = "Ping " .. tostring(st.ping) .. " ms"
+                        pgL.TextColor3 = st.pingColor or C.Good
                     end
                 end
-                h:Set({ players = #game:GetService("Players"):GetPlayers() .. "/" .. game:GetService("Players").MaxPlayers, ping = Lib.Ping or 0 })
+                local function uptime()
+                    local t = math.floor(workspace.DistributedGameTime)
+                    local hh, mm = math.floor(t / 3600), math.floor(t / 60) % 60
+                    return hh > 0 and string.format("Up %dh %02dm", hh, mm) or string.format("Up %dm", mm)
+                end
+                local function tick()
+                    local ping = Lib.Ping or 0
+                    h:Set({
+                        players = #Plr:GetPlayers() .. "/" .. Plr.MaxPlayers, ping = ping,
+                        pingColor = ping < 120 and C.Good or (ping < 250 and C.Warn or C.Bad),
+                    })
+                    upL.Text = uptime()
+                end
+                tick()
+                task.spawn(function()
+                    while not Lib.Unloaded do
+                        task.wait(0.5)
+                        if gui.Enabled and tab.page.Visible then pcall(tick) end
+                    end
+                end)
                 return h
             end
 
@@ -2043,7 +2279,7 @@ local Library = (function()
 
         local function dragFrom(handle)
             connect(handle.InputBegan, function(i)
-                if not isPress(i) or sbox:IsFocused() then return end
+                if not isPress(i) then return end
                 W.drag = { m = i.Position, p = body.Position }
             end)
         end
@@ -2324,6 +2560,7 @@ local Library = (function()
         end
         Lib.OnToggle()
         if Lib.FX then
+            if Lib._wipe then Lib._wipe(true, 0.7) end
             Lib._animWin = true
             fit.Scale = (Lib._baseScale or 1) * 0.85
             ease(fit, 0.5, { Scale = Lib._baseScale or 1 }, Enum.EasingStyle.Back)
