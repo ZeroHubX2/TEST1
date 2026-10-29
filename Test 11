@@ -750,6 +750,13 @@ local Library = (function()
         local opt = { Type = kind, Value = nil, _cbs = {}, Title = cfg.Title }
         function opt:OnChanged(fn) table.insert(self._cbs, fn) end
         function opt:_fire()
+            if kind == "Toggle" and id and Lib._islandPush and not Lib._loading and not Lib.StatusIgnore[id] then
+                local on = self.Value and true or false
+                pcall(Lib._islandPush, {
+                    title = tostring(cfg.Title or id), sub = on and "Turned on" or "Turned off", icon = on and "bolt" or "power",
+                    switch = on, color = on and accent() or C.Raise, duration = 1.6,
+                })
+            end
             if cfg.Callback then task.spawn(safe, cfg.Callback, self.Value) end
             for _, fn in ipairs(self._cbs) do task.spawn(safe, fn, self.Value) end
             if not self.NoSave and Lib.QueueSave then Lib:QueueSave() end
@@ -794,7 +801,7 @@ local Library = (function()
 
     Lib.Folder = "ZeroX UI"
     Lib.Name = "ZeroX UI"
-    Lib.Version = "3.4"
+    Lib.Version = "3.5"
     Lib.AutoSave = false
     local function fsOk() return writefile and readfile and isfile end
     function Lib:EnsureFolder(path)
@@ -3065,67 +3072,115 @@ local Library = (function()
         end
 
         do
-            local H = 38
+            local H, EH = 36, 66
             local sb = inst("Frame", {
                 Name = "StatusBar", AnchorPoint = Vector2.new(0.5, 0), Position = UDim2.new(0.5, 0, 0, 8),
-                Size = UDim2.fromOffset(200, H), BackgroundColor3 = C.Bg, BorderSizePixel = 0, ClipsDescendants = true,
+                Size = UDim2.fromOffset(220, H), BackgroundColor3 = Color3.new(0, 0, 0), BorderSizePixel = 0, ClipsDescendants = true, Active = true,
             }, top)
-            surface(sb, 0.12, 0)
-            round(sb)
-            glow(stroke(sb, 0.88), 0.88)
-            pad(sb, 5, 14, 0, 0)
-            list(sb, Enum.FillDirection.Horizontal, 8, nil, Enum.VerticalAlignment.Center)
+            local sbCorner = round(sb, H / 2)
+            local sbLine = stroke(sb, 0.85)
             Lib._statusBar = sb
             local sbScale = inst("UIScale", {}, sb)
-            local lg = inst("ImageLabel", {
-                BackgroundColor3 = C.Raise, BorderSizePixel = 0, Image = LOGO_ID, ScaleType = Enum.ScaleType.Crop,
-                Size = UDim2.fromOffset(H - 10, H - 10), LayoutOrder = 1,
-            }, sb)
-            round(lg)
-            local act = text({ Text = "", RichText = true, FontFace = F.Bold, TextSize = 12, AutomaticSize = Enum.AutomaticSize.X, Size = UDim2.fromOffset(0, H), LayoutOrder = 2 }, sb)
-            local function chip(parent, order)
-                local c = inst("Frame", {
-                    BackgroundColor3 = C.Raise, BackgroundTransparency = 0.25, BorderSizePixel = 0,
-                    AutomaticSize = Enum.AutomaticSize.X, Size = UDim2.fromOffset(0, H - 12), LayoutOrder = order,
-                }, parent)
-                round(c)
-                pad(c, 10, 12, 0, 0)
-                list(c, Enum.FillDirection.Horizontal, 7, nil, Enum.VerticalAlignment.Center)
-                local dot = inst("Frame", { BackgroundColor3 = accent(), BorderSizePixel = 0, Size = UDim2.fromOffset(6, 6), LayoutOrder = 1 }, c)
-                round(dot)
-                local l = text({ Text = "", FontFace = F.Semi, TextSize = 12, AutomaticSize = Enum.AutomaticSize.X, Size = UDim2.fromOffset(0, H - 12), LayoutOrder = 2 }, c)
-                return l, dot
+            local IS = { mode = "compact", queue = {}, w = 220, h = H }
+
+            local compact = inst("CanvasGroup", { Name = "Compact", BackgroundTransparency = 1, Size = UDim2.fromScale(1, 1) }, sb)
+            local crow = inst("Frame", {
+                BackgroundTransparency = 1, AnchorPoint = Vector2.new(0.5, 0.5), Position = UDim2.fromScale(0.5, 0.5),
+                AutomaticSize = Enum.AutomaticSize.X, Size = UDim2.fromOffset(0, H),
+            }, compact)
+            list(crow, Enum.FillDirection.Horizontal, 10, nil, Enum.VerticalAlignment.Center)
+            local pulse = inst("Frame", { BackgroundColor3 = accent(), BorderSizePixel = 0, Size = UDim2.fromOffset(7, 7), LayoutOrder = 1 }, crow)
+            round(pulse)
+            local brandMark
+            if cfg.Wordmark then
+                brandMark = inst("ImageLabel", {
+                    BackgroundTransparency = 1, Image = tostring(cfg.Wordmark), ScaleType = Enum.ScaleType.Fit,
+                    Size = UDim2.fromOffset(math.floor(14 * (tonumber(cfg.WordmarkAspect) or 3) + 0.5), 14), LayoutOrder = 2,
+                }, crow)
+            else
+                brandMark = text({
+                    Text = string.upper(Lib.Name), FontFace = F.Bold, TextSize = 12, AutomaticSize = Enum.AutomaticSize.X,
+                    Size = UDim2.fromOffset(0, H), LayoutOrder = 2,
+                }, crow)
             end
-            local stats = inst("Frame", { BackgroundTransparency = 1, AutomaticSize = Enum.AutomaticSize.X, Size = UDim2.fromOffset(0, H), LayoutOrder = 3 }, sb)
-            list(stats, Enum.FillDirection.Horizontal, 6, nil, Enum.VerticalAlignment.Center)
-            local S = {}
-            S.fps, S.fpsDot = chip(stats, 1)
-            S.ping, S.pingDot = chip(stats, 2)
-            S.clock, S.clockDot = chip(stats, 3)
-            S.run, S.runDot = chip(stats, 4)
-            local function tick()
-                if Lib.Unloaded then return end
-                local count = 0
-                for _, t in ipairs(Lib._toggles) do
-                    if t.opt.Value and not Lib.StatusIgnore[t.id] then count = count + 1 end
+            local function sep(order)
+                return inst("Frame", { BackgroundColor3 = Color3.new(1, 1, 1), BackgroundTransparency = 0.82, BorderSizePixel = 0, Size = UDim2.fromOffset(1, 14), LayoutOrder = order }, crow)
+            end
+            sep(3)
+            local function stat(order, unit)
+                local f2 = inst("Frame", { BackgroundTransparency = 1, AutomaticSize = Enum.AutomaticSize.X, Size = UDim2.fromOffset(0, H), LayoutOrder = order }, crow)
+                list(f2, Enum.FillDirection.Horizontal, 3, nil, Enum.VerticalAlignment.Center)
+                local v = text({ Text = "-", FontFace = F.Bold, TextSize = 13, AutomaticSize = Enum.AutomaticSize.X, Size = UDim2.fromOffset(0, H), LayoutOrder = 1 }, f2)
+                if unit then
+                    text({ Text = unit, FontFace = F.Semi, TextSize = 10, TextColor3 = C.Dim, AutomaticSize = Enum.AutomaticSize.X, Size = UDim2.fromOffset(0, H), LayoutOrder = 2 }, f2)
                 end
-                local col = accent()
-                act.Text = 'ACTIVE  <font color="' .. string.format("#%02x%02x%02x", math.floor(col.R * 255), math.floor(col.G * 255), math.floor(col.B * 255)) .. '">' .. count .. "</font>"
-                local fps, ping = Lib.FPS or 0, Lib.Ping or 0
-                S.fps.Text = fps .. " FPS"
-                S.fpsDot.BackgroundColor3 = fps >= 55 and C.Good or (fps >= 30 and C.Warn or C.Bad)
-                S.ping.Text = ping .. " ms"
-                S.pingDot.BackgroundColor3 = ping < 120 and C.Good or (ping < 250 and C.Warn or C.Bad)
-                S.clock.Text = os.date("%H:%M")
-                S.clockDot.BackgroundColor3 = col
-                local t = math.floor(os.clock() - (Lib.StartedAt or os.clock()))
-                S.run.Text = string.format("Run %02d:%02d:%02d", math.floor(t / 3600), math.floor(t / 60) % 60, t % 60)
-                S.runDot.BackgroundColor3 = col
+                return v
+            end
+            local S = {}
+            S.fps = stat(4, "FPS")
+            S.ping = stat(5, "MS")
+            S.clock = stat(6, nil)
+            sep(7)
+            local actPill = inst("Frame", {
+                BackgroundColor3 = accent(), BorderSizePixel = 0, AutomaticSize = Enum.AutomaticSize.X, Size = UDim2.fromOffset(0, 20), LayoutOrder = 8,
+            }, crow)
+            round(actPill)
+            pad(actPill, 8, 8, 0, 0)
+            list(actPill, Enum.FillDirection.Horizontal, 4, nil, Enum.VerticalAlignment.Center)
+            local actIcon = icon("bolt", 11, actPill, Color3.new(1, 1, 1))
+            actIcon.LayoutOrder = 1
+            local actL = text({ Text = "0", FontFace = F.Bold, TextSize = 12, TextColor3 = Color3.new(1, 1, 1), AutomaticSize = Enum.AutomaticSize.X, Size = UDim2.fromOffset(0, 20), LayoutOrder = 2 }, actPill)
+            S.run = stat(9, nil)
+            S.run.TextColor3 = C.Sub
+
+            local exp = inst("CanvasGroup", { Name = "Expanded", BackgroundTransparency = 1, Size = UDim2.fromScale(1, 1), GroupTransparency = 1, Visible = false }, sb)
+            local eIconBg = inst("Frame", {
+                BackgroundColor3 = accent(), BorderSizePixel = 0, AnchorPoint = Vector2.new(0, 0.5), Position = UDim2.new(0, 14, 0.5, 0), Size = UDim2.fromOffset(38, 38),
+            }, exp)
+            round(eIconBg)
+            local eIcon = icon("bolt", 18, eIconBg, Color3.new(1, 1, 1))
+            eIcon.AnchorPoint = Vector2.new(0.5, 0.5)
+            eIcon.Position = UDim2.fromScale(0.5, 0.5)
+            local eIconScale = inst("UIScale", {}, eIconBg)
+            local eTitle = text({
+                Text = "", FontFace = F.Bold, TextSize = 15, TextColor3 = Color3.new(1, 1, 1), Position = UDim2.fromOffset(64, 13),
+                Size = UDim2.new(1, -140, 0, 20), TextTruncate = Enum.TextTruncate.AtEnd,
+            }, exp)
+            local eSub = text({
+                Text = "", FontFace = F.Med, TextSize = 12, TextColor3 = C.Sub, Position = UDim2.fromOffset(64, 34),
+                Size = UDim2.new(1, -140, 0, 18), TextTruncate = Enum.TextTruncate.AtEnd,
+            }, exp)
+            local eSw = inst("Frame", {
+                BackgroundColor3 = C.Track, BorderSizePixel = 0, AnchorPoint = Vector2.new(1, 0.5), Position = UDim2.new(1, -18, 0.5, 0), Size = UDim2.fromOffset(44, 24),
+            }, exp)
+            round(eSw)
+            local eKnob = inst("Frame", { BackgroundColor3 = Color3.new(1, 1, 1), BorderSizePixel = 0, AnchorPoint = Vector2.new(0, 0.5), Position = UDim2.new(0, 3, 0.5, 0), Size = UDim2.fromOffset(18, 18) }, eSw)
+            round(eKnob)
+            local eTag = text({
+                Text = "", FontFace = F.Bold, TextSize = 11, TextColor3 = Color3.new(1, 1, 1), BackgroundColor3 = C.Raise, BackgroundTransparency = 0,
+                AnchorPoint = Vector2.new(1, 0.5), Position = UDim2.new(1, -18, 0.5, 0), AutomaticSize = Enum.AutomaticSize.X, Size = UDim2.fromOffset(0, 22),
+                TextXAlignment = Enum.TextXAlignment.Center, Visible = false,
+            }, exp)
+            round(eTag)
+            pad(eTag, 9, 9, 0, 0)
+            local eBarT = inst("Frame", { BackgroundColor3 = C.Track, BackgroundTransparency = 0.4, BorderSizePixel = 0, AnchorPoint = Vector2.new(0.5, 1), Position = UDim2.new(0.5, 0, 1, -6), Size = UDim2.new(1, -60, 0, 2) }, exp)
+            round(eBarT)
+            local eBar = inst("Frame", { BackgroundColor3 = accent(), BorderSizePixel = 0, Size = UDim2.fromScale(1, 1) }, eBarT)
+            round(eBar)
+            onAccent(function(c)
+                pulse.BackgroundColor3 = c
+                actPill.BackgroundColor3 = c
+                eBar.BackgroundColor3 = c
+            end)
+
+            local function compactWidth()
+                local sc = math.max(sbScale.Scale, 0.01)
+                return crow.AbsoluteSize.X / sc + 30
+            end
+            local function place(w, h)
                 local vp = viewport()
                 local sc = math.clamp(tonumber(Lib.StatusScale) or 1, 0.5, 1.5)
                 sbScale.Scale = sc
-                local w = 5 + 14 + (H - 10) + 8 + act.AbsoluteSize.X / sc + 8 + stats.AbsoluteSize.X / sc
-                sb.Size = UDim2.fromOffset(w, H)
                 local half, hh = w * sc / 2, H * sc
                 local x, y
                 if type(Lib.StatusPos) == "table" then
@@ -3142,13 +3197,114 @@ local Library = (function()
                     y = insetH > 0 and math.floor(insetY + (insetH - hh) / 2) or 8
                 end
                 x = math.clamp(x, half, math.max(half, vp.X - half))
-                y = math.clamp(y, 0, math.max(vp.Y - hh, 0))
-                sb.Position = UDim2.fromOffset(x, y)
+                y = math.clamp(y, 0, math.max(vp.Y - h * sc, 0))
+                return x, y, half, h * sc
+            end
+            local function morph(w, h, dur)
+                IS.w, IS.h = w, h
+                local x, y = place(w, h)
+                if Lib.FX and dur and dur > 0 then
+                    ease(sb, dur, { Size = UDim2.fromOffset(w, h), Position = UDim2.fromOffset(x, y) }, Enum.EasingStyle.Back)
+                    ease(sbCorner, dur, { CornerRadius = UDim.new(0, h >= EH and 24 or h / 2) })
+                else
+                    sb.Size = UDim2.fromOffset(w, h)
+                    sb.Position = UDim2.fromOffset(x, y)
+                    sbCorner.CornerRadius = UDim.new(0, h >= EH and 24 or h / 2)
+                end
+            end
+
+            local function runQueue()
+                if IS.busy then return end
+                local item = table.remove(IS.queue, 1)
+                if not item then return end
+                IS.busy = true
+                IS.mode = "expanded"
+                eTitle.Text = tostring(item.title or "")
+                eSub.Text = tostring(item.sub or "")
+                eIcon.Image = Icons[item.icon or "bolt"] or Icons.bolt
+                local col = item.color or accent()
+                eIconBg.BackgroundColor3 = col
+                eSw.Visible = item.switch ~= nil
+                eTag.Visible = item.tag ~= nil
+                if item.tag then
+                    eTag.Text = tostring(item.tag)
+                    eTag.BackgroundColor3 = item.tagColor or C.Raise
+                end
+                if item.switch ~= nil then
+                    eSw.BackgroundColor3 = item.switch and C.Track or accent()
+                    eKnob.Position = item.switch and UDim2.new(0, 3, 0.5, 0) or UDim2.new(1, -21, 0.5, 0)
+                end
+                local tw2 = math.max(textWidth(eTitle.Text, 15), textWidth(eSub.Text, 12))
+                local w = math.clamp(tw2 + 150, 260, 420)
+                exp.Visible = true
+                exp.GroupTransparency = 1
+                morph(w, EH, 0.45)
+                tw(sbLine, 0.3, { Color = col, Transparency = 0.4 })
+                ease(compact, 0.15, { GroupTransparency = 1 })
+                task.delay(0.12, function()
+                    ease(exp, 0.25, { GroupTransparency = 0 })
+                    eIconScale.Scale = 0.4
+                    ease(eIconScale, 0.45, { Scale = 1 }, Enum.EasingStyle.Back)
+                    if item.switch ~= nil then
+                        task.delay(0.15, function()
+                            ease(eSw, 0.25, { BackgroundColor3 = item.switch and accent() or C.Track })
+                            ease(eKnob, 0.35, { Position = item.switch and UDim2.new(1, -21, 0.5, 0) or UDim2.new(0, 3, 0.5, 0) }, Enum.EasingStyle.Back)
+                        end)
+                    end
+                end)
+                local dur = math.clamp(tonumber(item.duration) or 1.8, 1.2, 4)
+                eBar.Size = UDim2.fromScale(1, 1)
+                TweenService:Create(eBar, TweenInfo.new(dur, Enum.EasingStyle.Linear), { Size = UDim2.fromScale(0, 1) }):Play()
+                task.delay(dur, function()
+                    ease(exp, 0.18, { GroupTransparency = 1 })
+                    task.delay(0.12, function()
+                        exp.Visible = false
+                        IS.mode = "compact"
+                        morph(compactWidth(), H, 0.45)
+                        tw(sbLine, 0.3, { Color = C.Line, Transparency = 0.85 })
+                        ease(compact, 0.3, { GroupTransparency = 0 })
+                        task.delay(0.35, function()
+                            IS.busy = false
+                            runQueue()
+                        end)
+                    end)
+                end)
+            end
+            function Lib._islandPush(item)
+                if not (Lib.StatusOn and sb.Visible) then return false end
+                if #IS.queue >= 4 then table.remove(IS.queue, 1) end
+                table.insert(IS.queue, item)
+                runQueue()
+                return true
+            end
+
+            local function tick()
+                if Lib.Unloaded then return end
+                local count = 0
+                for _, t in ipairs(Lib._toggles) do
+                    if t.opt.Value and not Lib.StatusIgnore[t.id] then count = count + 1 end
+                end
+                actL.Text = tostring(count)
+                local fps, ping = Lib.FPS or 0, Lib.Ping or 0
+                S.fps.Text = tostring(fps)
+                S.fps.TextColor3 = fps >= 55 and C.Text or (fps >= 30 and C.Warn or C.Bad)
+                S.ping.Text = tostring(ping)
+                S.ping.TextColor3 = ping < 120 and C.Good or (ping < 250 and C.Warn or C.Bad)
+                S.clock.Text = os.date("%H:%M")
+                local t = math.floor(os.clock() - (Lib.StartedAt or os.clock()))
+                S.run.Text = string.format("%02d:%02d:%02d", math.floor(t / 3600), math.floor(t / 60) % 60, t % 60)
+                if IS.mode == "compact" and not IS.busy then
+                    local w = compactWidth()
+                    if math.abs(w - IS.w) > 2 then morph(w, H, 0.3) else morph(w, H, 0) end
+                else
+                    local x, y = place(IS.w, IS.h)
+                    sb.Position = UDim2.fromOffset(x, y)
+                end
+                local x, y, half, hh = place(IS.w, IS.h)
                 local bp, bs = body.AbsolutePosition, body.AbsoluteSize
                 local over = gui.Enabled and not W.sbDrag and x + half > bp.X and x - half < bp.X + bs.X and y + hh > bp.Y and y < bp.Y + bs.Y
                 sb.Visible = Lib.StatusOn and not over
             end
-            sb.Active = true
             connect(sb.InputBegan, function(i)
                 if not isPress(i) then return end
                 W.sbDrag = { m = i.Position, p = Vector2.new(sb.Position.X.Offset, sb.Position.Y.Offset) }
@@ -3159,7 +3315,8 @@ local Library = (function()
                 if d.Magnitude < 4 and not W.sbDrag.moved then return end
                 W.sbDrag.moved = true
                 Lib.StatusPos = { W.sbDrag.p.X + d.X, W.sbDrag.p.Y + d.Y }
-                tick()
+                local x, y = place(IS.w, IS.h)
+                sb.Position = UDim2.fromOffset(x, y)
             end)
             connect(UIS.InputEnded, function(i)
                 if not W.sbDrag or not isPress(i) then return end
@@ -3168,6 +3325,10 @@ local Library = (function()
                 if moved then
                     Lib.StatusPos = { sb.Position.X.Offset, sb.Position.Y.Offset }
                     if Lib.QueueSave then Lib:QueueSave() end
+                elseif not IS.busy then
+                    Lib._islandPush({
+                        title = Lib.Name, sub = "Session " .. S.run.Text .. "  ·  " .. actL.Text .. " active", icon = "clock", duration = 2,
+                    })
                 end
             end)
             Lib._statusTick = tick
@@ -3175,8 +3336,13 @@ local Library = (function()
                 Lib.StatusPos = { tonumber(saved.__status[1]), tonumber(saved.__status[2]) }
             end
             task.spawn(function()
+                local n = 0
                 while not Lib.Unloaded do
                     pcall(tick)
+                    n = n + 1
+                    if Lib.FX then
+                        pulse.BackgroundTransparency = (n % 2 == 0) and 0 or 0.6
+                    end
                     task.wait(0.5)
                 end
             end)
@@ -3431,6 +3597,13 @@ local Library = (function()
     end
 
     function Lib:Notify(ncfg)
+        if Lib._islandPush and pcall(function() return true end) then
+            local ok, shown = pcall(Lib._islandPush, {
+                title = tostring(ncfg.Title or Lib.Name), sub = tostring(ncfg.Content or ""), icon = ncfg.Icon or "info",
+                duration = tonumber(ncfg.Duration) or 3,
+            })
+            if ok and shown then return end
+        end
         pcall(function()
             Lib._toastN = (Lib._toastN or 0) + 1
             local holder = inst("Frame", {
