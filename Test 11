@@ -794,7 +794,7 @@ local Library = (function()
 
     Lib.Folder = "ZeroX UI"
     Lib.Name = "ZeroX UI"
-    Lib.Version = "3.3"
+    Lib.Version = "3.4"
     Lib.AutoSave = false
     local function fsOk() return writefile and readfile and isfile end
     function Lib:EnsureFolder(path)
@@ -1295,7 +1295,7 @@ local Library = (function()
         }, foot)
         list(made, Enum.FillDirection.Horizontal, 8, nil, Enum.VerticalAlignment.Center)
         text({
-            Text = tostring(cfg.Credit or ("Made by " .. Lib.Name)) .. "  ·  v" .. Lib.Version, FontFace = F.Med, TextSize = 12, TextColor3 = C.Sub,
+            Text = tostring(cfg.Footer or Lib.Name), FontFace = F.Med, TextSize = 12, TextColor3 = C.Sub,
             AutomaticSize = Enum.AutomaticSize.X, Size = UDim2.fromOffset(0, 24), LayoutOrder = 1,
         }, made)
         local keyChip = text({
