@@ -840,7 +840,7 @@ local Library = (function()
 
     Lib.Folder = "ZeroX UI"
     Lib.Name = "ZeroX UI"
-    Lib.Version = "4.0"
+    Lib.Version = "4.1"
     Lib.AutoSave = false
     local function fsOk() return writefile and readfile and isfile end
     function Lib:EnsureFolder(path)
@@ -3639,7 +3639,158 @@ local Library = (function()
             task.delay(3, finish)
         end
         Lib.OnToggle()
-        if Lib.FX then task.defer(function() Lib._fold(true) end) end
+        local function welcome(done)
+            local col = accent()
+            local hr = tonumber(os.date("%H")) or 12
+            local greet = hr < 5 and "Good night" or hr < 12 and "Good morning" or hr < 18 and "Good afternoon" or "Good evening"
+            local wg = inst("Frame", { Name = "Welcome", BackgroundColor3 = Color3.new(0, 0, 0), BackgroundTransparency = 1, BorderSizePixel = 0, Size = UDim2.fromScale(1, 1), ZIndex = 80, Active = true }, top)
+            local vp = viewport()
+            local u = math.clamp(math.min(vp.X / 900, vp.Y / 560), 0.6, 1.2)
+            local glow = inst("Frame", {
+                BackgroundColor3 = col, BorderSizePixel = 0, AnchorPoint = Vector2.new(0.5, 0.5), Position = UDim2.fromScale(0.5, 0.5),
+                Size = UDim2.fromOffset(700 * u, 700 * u), BackgroundTransparency = 1, ZIndex = 80,
+            }, wg)
+            round(glow)
+            inst("UIGradient", { Transparency = NumberSequence.new({ NumberSequenceKeypoint.new(0, 0.75), NumberSequenceKeypoint.new(0.6, 0.95), NumberSequenceKeypoint.new(1, 1) }) , Rotation = 0 }, glow)
+            local content = inst("CanvasGroup", {
+                BackgroundTransparency = 1, AnchorPoint = Vector2.new(0.5, 0.5), Position = UDim2.fromScale(0.5, 0.5), Size = UDim2.fromOffset(560 * u, 420 * u),
+                GroupTransparency = 1, ZIndex = 81,
+            }, wg)
+            local cscale = inst("UIScale", { Scale = 0.92 }, content)
+            local ring = inst("Frame", {
+                BackgroundColor3 = Color3.fromRGB(16, 16, 20), BorderSizePixel = 0, AnchorPoint = Vector2.new(0.5, 0), Position = UDim2.new(0.5, 0, 0, 10 * u),
+                Size = UDim2.fromOffset(104 * u, 104 * u), ZIndex = 82,
+            }, content)
+            round(ring)
+            local rs = stroke(ring, 0)
+            rs.Thickness = 3
+            rs.Color = col
+            local rg = inst("UIGradient", {
+                Transparency = NumberSequence.new({ NumberSequenceKeypoint.new(0, 0), NumberSequenceKeypoint.new(0.5, 0.9), NumberSequenceKeypoint.new(1, 0) }),
+            }, rs)
+            local av = inst("ImageLabel", {
+                BackgroundColor3 = C.Raise, BorderSizePixel = 0, AnchorPoint = Vector2.new(0.5, 0.5), Position = UDim2.fromScale(0.5, 0.5),
+                Size = UDim2.new(1, -10 * u, 1, -10 * u), Image = "rbxthumb://type=AvatarHeadShot&id=" .. tostring(LP.UserId) .. "&w=150&h=150", ZIndex = 83,
+            }, ring)
+            round(av)
+            local avScale = inst("UIScale", { Scale = 0.3 }, ring)
+            local hello = text({
+                Text = greet .. ",", FontFace = F.Med, TextSize = math.floor(18 * u), TextColor3 = C.Sub, AnchorPoint = Vector2.new(0.5, 0),
+                Position = UDim2.new(0.5, 0, 0, 130 * u), Size = UDim2.new(1, 0, 0, 22 * u), TextXAlignment = Enum.TextXAlignment.Center, ZIndex = 82,
+            }, content)
+            local nameL = text({
+                Text = tostring(LP.DisplayName), FontFace = F.Bold, TextSize = math.floor(38 * u), TextColor3 = Color3.new(1, 1, 1), AnchorPoint = Vector2.new(0.5, 0),
+                Position = UDim2.new(0.5, 0, 0, 154 * u), Size = UDim2.new(1, 0, 0, 46 * u), TextXAlignment = Enum.TextXAlignment.Center, ZIndex = 82,
+            }, content)
+            local nG = inst("UIGradient", {
+                Color = ColorSequence.new({ ColorSequenceKeypoint.new(0, Color3.new(1, 1, 1)), ColorSequenceKeypoint.new(0.6, Color3.new(1, 1, 1)), ColorSequenceKeypoint.new(1, col:Lerp(Color3.new(1, 1, 1), 0.35)) }),
+            }, nameL)
+            local wel = inst("Frame", {
+                BackgroundTransparency = 1, AnchorPoint = Vector2.new(0.5, 0), Position = UDim2.new(0.5, 0, 0, 214 * u), AutomaticSize = Enum.AutomaticSize.X,
+                Size = UDim2.fromOffset(0, 30 * u), ZIndex = 82,
+            }, content)
+            list(wel, Enum.FillDirection.Horizontal, 10 * u, nil, Enum.VerticalAlignment.Center)
+            text({ Text = "Welcome to", FontFace = F.Med, TextSize = math.floor(15 * u), TextColor3 = C.Sub, AutomaticSize = Enum.AutomaticSize.X, Size = UDim2.fromOffset(0, 30 * u), LayoutOrder = 1, ZIndex = 82 }, wel)
+            if cfg.Wordmark then
+                inst("ImageLabel", {
+                    BackgroundTransparency = 1, Image = tostring(cfg.Wordmark), ScaleType = Enum.ScaleType.Fit, LayoutOrder = 2, ZIndex = 82,
+                    Size = UDim2.fromOffset(math.floor(30 * u * (tonumber(cfg.WordmarkAspect) or 3)), 30 * u),
+                }, wel)
+            else
+                text({ Text = string.upper(Lib.Name), FontFace = F.Bold, TextSize = math.floor(16 * u), AutomaticSize = Enum.AutomaticSize.X, Size = UDim2.fromOffset(0, 30 * u), LayoutOrder = 2, ZIndex = 82 }, wel)
+            end
+            local mapRow = inst("Frame", {
+                BackgroundTransparency = 1, AnchorPoint = Vector2.new(0.5, 0), Position = UDim2.new(0.5, 0, 0, 252 * u), AutomaticSize = Enum.AutomaticSize.X,
+                Size = UDim2.fromOffset(0, 20 * u), ZIndex = 82,
+            }, content)
+            list(mapRow, Enum.FillDirection.Horizontal, 12 * u, nil, Enum.VerticalAlignment.Center)
+            local function rule(order, flip)
+                local r = inst("Frame", { BackgroundColor3 = col, BorderSizePixel = 0, Size = UDim2.fromOffset(46 * u, 2), LayoutOrder = order, ZIndex = 82 }, mapRow)
+                inst("UIGradient", { Transparency = NumberSequence.new(flip and 0 or 1, flip and 1 or 0) }, r)
+            end
+            rule(1, false)
+            text({
+                Text = string.upper(baseSub ~= "" and baseSub or "READY"):gsub(".", "%0 "):sub(1, -2), FontFace = F.Bold, TextSize = math.floor(12 * u),
+                TextColor3 = col:Lerp(Color3.new(1, 1, 1), 0.25), AutomaticSize = Enum.AutomaticSize.X, Size = UDim2.fromOffset(0, 20 * u), LayoutOrder = 2, ZIndex = 82,
+            }, mapRow)
+            rule(3, true)
+            local stepL = text({
+                Text = "", FontFace = F.Semi, TextSize = math.floor(12 * u), TextColor3 = C.Sub, AnchorPoint = Vector2.new(0.5, 0),
+                Position = UDim2.new(0.5, 0, 0, 312 * u), Size = UDim2.new(1, 0, 0, 16 * u), TextXAlignment = Enum.TextXAlignment.Center, ZIndex = 82,
+            }, content)
+            local track = inst("Frame", {
+                BackgroundColor3 = C.Track, BorderSizePixel = 0, AnchorPoint = Vector2.new(0.5, 0), Position = UDim2.new(0.5, 0, 0, 336 * u),
+                Size = UDim2.fromOffset(220 * u, 3), ZIndex = 82,
+            }, content)
+            round(track)
+            local fillW = inst("Frame", { BackgroundColor3 = col, BorderSizePixel = 0, Size = UDim2.fromScale(0, 1), ZIndex = 83 }, track)
+            round(fillW)
+            text({
+                Text = "Tap to skip", FontFace = F.Med, TextSize = math.floor(11 * u), TextColor3 = C.Dim, AnchorPoint = Vector2.new(0.5, 1),
+                Position = UDim2.new(0.5, 0, 1, -6 * u), Size = UDim2.new(1, 0, 0, 14 * u), TextXAlignment = Enum.TextXAlignment.Center, ZIndex = 82,
+            }, content)
+            local finished = false
+            local function finish()
+                if finished then return end
+                finished = true
+                sfx("uiOpen")
+                ease(content, 0.35, { GroupTransparency = 1 })
+                ease(cscale, 0.35, { Scale = 1.08 }, Enum.EasingStyle.Quad, Enum.EasingDirection.In)
+                ease(wg, 0.45, { BackgroundTransparency = 1 })
+                ease(glow, 0.35, { BackgroundTransparency = 1 })
+                task.delay(0.3, function() if done then pcall(done) end end)
+                task.delay(0.5, function() pcall(function() wg:Destroy() end) end)
+            end
+            local skip = inst("TextButton", { Text = "", AutoButtonColor = false, BackgroundTransparency = 1, Size = UDim2.fromScale(1, 1), ZIndex = 90 }, wg)
+            skip.MouseButton1Click:Connect(finish)
+            ease(wg, 0.4, { BackgroundTransparency = 0.25 })
+            ease(glow, 0.8, { BackgroundTransparency = 0 })
+            ease(content, 0.5, { GroupTransparency = 0 })
+            ease(cscale, 0.6, { Scale = 1 }, Enum.EasingStyle.Back)
+            ease(avScale, 0.7, { Scale = 1 }, Enum.EasingStyle.Back)
+            sfx("notify", 0.8)
+            task.delay(0.09, function() sfx("notify2", 0.7) end)
+            task.spawn(function()
+                local full = utf8.len(nameL.Text) or #nameL.Text
+                nameL.MaxVisibleGraphemes = 0
+                task.wait(0.35)
+                for i = 1, full do
+                    if finished then break end
+                    nameL.MaxVisibleGraphemes = i
+                    task.wait(0.035)
+                end
+                nameL.MaxVisibleGraphemes = -1
+            end)
+            task.spawn(function()
+                local a = 0
+                while not finished and wg.Parent do
+                    a = (a + 6) % 360
+                    rg.Rotation = a
+                    task.wait()
+                end
+            end)
+            local steps = { "Loading interface", "Syncing your settings", "Warming up features", "Ready" }
+            task.spawn(function()
+                for i, st in ipairs(steps) do
+                    if finished then return end
+                    stepL.Text = st
+                    if i == #steps then stepL.TextColor3 = col:Lerp(Color3.new(1, 1, 1), 0.3) end
+                    ease(fillW, 0.5, { Size = UDim2.fromScale(i / #steps, 1) }, Enum.EasingStyle.Quad, Enum.EasingDirection.InOut)
+                    task.wait(0.55)
+                end
+                task.wait(0.35)
+                finish()
+            end)
+        end
+        if cfg.Welcome ~= false then
+            body.Visible = false
+            welcome(function()
+                body.Visible = true
+                if Lib.FX then Lib._fold(true) end
+            end)
+        elseif Lib.FX then
+            task.defer(function() Lib._fold(true) end)
+        end
         connect(gui.AncestryChanged, function()
             if not gui.Parent then Lib.Unloaded = true end
         end)
