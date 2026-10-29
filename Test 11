@@ -610,6 +610,7 @@ local Library = (function()
 
     Lib.Folder = "ZeroX UI"
     Lib.Name = "ZeroX UI"
+    Lib.Version = "2.1"
     Lib.AutoSave = false
     local function fsOk() return writefile and readfile and isfile end
     function Lib:EnsureFolder(path)
@@ -907,6 +908,7 @@ local Library = (function()
             tw(findLine, 0.2, { Color = C.Line, Transparency = 0.9 })
         end)
         local tabsRow = inst("Frame", { Name = "Row", BackgroundTransparency = 1, AutomaticSize = Enum.AutomaticSize.X, Size = UDim2.new(0, 0, 1, 0), ZIndex = 2 }, tabsBar)
+        pad(tabsBar, 3, 3, 0, 0)
         list(tabsRow, Enum.FillDirection.Horizontal, 4, nil, Enum.VerticalAlignment.Center)
         local ind = inst("Frame", {
             Name = "Indicator", BackgroundColor3 = accent(), BorderSizePixel = 0, AnchorPoint = Vector2.new(0, 0.5),
@@ -914,10 +916,23 @@ local Library = (function()
         }, tabsBar)
         round(ind, 10)
         local indLine = inst("UIStroke", { Thickness = 1, ApplyStrokeMode = Enum.ApplyStrokeMode.Border }, ind)
+        local dim = Color3.fromRGB(64, 64, 64)
+        local indShine = inst("UIGradient", {
+            Color = ColorSequence.new({
+                ColorSequenceKeypoint.new(0, dim), ColorSequenceKeypoint.new(0.4, dim), ColorSequenceKeypoint.new(0.5, Color3.new(1, 1, 1)),
+                ColorSequenceKeypoint.new(0.6, dim), ColorSequenceKeypoint.new(1, dim),
+            }),
+            Offset = Vector2.new(-1, 0), Rotation = 20,
+        }, ind)
         onAccent(function(c)
-            ind.BackgroundColor3 = c:Lerp(Color3.new(0, 0, 0), 0.86)
+            ind.BackgroundColor3 = c:Lerp(Color3.new(0, 0, 0), 0.45)
             indLine.Color = c
         end)
+        function W.shine()
+            if not Lib.FX then return end
+            indShine.Offset = Vector2.new(-1, 0)
+            ease(indShine, 0.8, { Offset = Vector2.new(1, 0) }, Enum.EasingStyle.Quad, Enum.EasingDirection.InOut)
+        end
         function W.indTarget(tab)
             local s2 = math.max(fit.Scale, 0.01)
             return (tab.pill.AbsolutePosition.X - tabsRow.AbsolutePosition.X) / s2, tab.pill.AbsoluteSize.X / s2
@@ -936,13 +951,12 @@ local Library = (function()
             if not (tab and tab.pill and W.ix and gui.Enabled) then return end
             dt = math.min(dt, 1 / 30)
             local x, w = W.indTarget(tab)
-            W.vx = W.vx + ((x - W.ix) * 320 - W.vx * 26) * dt
-            W.vw = W.vw + ((w - W.iw) * 320 - W.vw * 26) * dt
+            W.vx = W.vx + ((x - W.ix) * 420 - W.vx * 41) * dt
+            W.vw = W.vw + ((w - W.iw) * 420 - W.vw * 41) * dt
             W.ix = W.ix + W.vx * dt
             W.iw = W.iw + W.vw * dt
-            local stretch = math.min(math.abs(W.vx) * 0.04, 26)
-            ind.Position = UDim2.new(0, W.ix - (W.vx > 0 and stretch or 0), 0.5, 0)
-            ind.Size = UDim2.fromOffset(math.max(W.iw + stretch, 0), 38)
+            ind.Position = UDim2.new(0, W.ix, 0.5, 0)
+            ind.Size = UDim2.fromOffset(math.max(W.iw, 0), 38)
         end
         connect(tabsRow:GetPropertyChangedSignal("AbsoluteSize"), function()
             if W.active then W.moveIndicator(W.active, false) end
@@ -1000,6 +1014,26 @@ local Library = (function()
         }, head)
 
         local pages = inst("Frame", { Name = "Pages", BackgroundTransparency = 1, Position = UDim2.fromOffset(0, 188), Size = UDim2.new(1, 0, 1, -234), ClipsDescendants = true }, body)
+        local slash = inst("Frame", {
+            Name = "Slash", BackgroundColor3 = accent(), BorderSizePixel = 0, AnchorPoint = Vector2.new(0.5, 0.5),
+            Position = UDim2.new(-0.2, 0, 0.5, 0), Size = UDim2.new(0, 120, 1.8, 0), Rotation = 14, ZIndex = 30, Visible = false,
+        }, pages)
+        inst("UIGradient", {
+            Transparency = NumberSequence.new({
+                NumberSequenceKeypoint.new(0, 1), NumberSequenceKeypoint.new(0.42, 0.65), NumberSequenceKeypoint.new(0.5, 0),
+                NumberSequenceKeypoint.new(0.58, 0.65), NumberSequenceKeypoint.new(1, 1),
+            }),
+        }, slash)
+        onAccent(function(c) slash.BackgroundColor3 = c end)
+        function W.slashSweep()
+            if not Lib.FX then return end
+            W.slashTok = (W.slashTok or 0) + 1
+            local my = W.slashTok
+            slash.Position = UDim2.new(-0.2, 0, 0.5, 0)
+            slash.Visible = true
+            ease(slash, 0.5, { Position = UDim2.new(1.2, 0, 0.5, 0) }, Enum.EasingStyle.Quart, Enum.EasingDirection.InOut)
+            task.delay(0.52, function() if W.slashTok == my then slash.Visible = false end end)
+        end
 
         local foot = inst("Frame", { Name = "Footer", BackgroundTransparency = 1, AnchorPoint = Vector2.new(0, 1), Position = UDim2.fromScale(0, 1), Size = UDim2.new(1, 0, 0, 44) }, body)
         inst("Frame", { Name = "Line", BackgroundColor3 = C.Line, BackgroundTransparency = 0.93, BorderSizePixel = 0, Position = UDim2.fromOffset(18, 0), Size = UDim2.new(1, -36, 0, 1) }, foot)
@@ -1023,7 +1057,7 @@ local Library = (function()
         }, foot)
         list(made, Enum.FillDirection.Horizontal, 8, nil, Enum.VerticalAlignment.Center)
         text({
-            Text = tostring(cfg.Credit or ("Made by " .. Lib.Name)), FontFace = F.Med, TextSize = 12, TextColor3 = C.Sub,
+            Text = tostring(cfg.Credit or ("Made by " .. Lib.Name)) .. "  ·  v" .. Lib.Version, FontFace = F.Med, TextSize = 12, TextColor3 = C.Sub,
             AutomaticSize = Enum.AutomaticSize.X, Size = UDim2.fromOffset(0, 24), LayoutOrder = 1,
         }, made)
         local keyChip = text({
@@ -1150,6 +1184,10 @@ local Library = (function()
             tab.paint(true)
             task.defer(function()
                 W.moveIndicator(tab, W.indReady)
+                if W.indReady then
+                    W.slashSweep()
+                    task.delay(0.3, W.shine)
+                end
                 W.indReady = true
             end)
             if Lib.FX then
@@ -1349,7 +1387,6 @@ local Library = (function()
             }, tabsRow)
             round(pill, 10)
             tab.pill = pill
-            press(pill)
             pad(pill, 13, 15, 0, 0)
             list(pill, Enum.FillDirection.Horizontal, 7, nil, Enum.VerticalAlignment.Center)
             local pic = icon(tcfg.Icon, 17, pill, C.Sub)
@@ -2638,4 +2675,5 @@ local Library = (function()
 end)()
 
 Env.__ZeroXUI = Library
+print("[ZeroHub UI] v" .. tostring(Library.Version) .. " loaded")
 return Library
