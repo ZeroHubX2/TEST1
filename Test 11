@@ -279,6 +279,45 @@ local Library = (function()
         if Lib._fxStep then Lib._fxStep(dt) end
         if Lib._tabStep then Lib._tabStep(dt) end
     end)
+    Lib.SoundOn = true
+    Lib.Volume = 0.5
+    local SFX = {
+        click = "rbxassetid://17208396156", tab = "rbxassetid://17208408337", on = "rbxassetid://15675055424",
+        off = "rbxassetid://15675032796", tick = "rbxasset://sounds/volume_slider.ogg", open = "rbxassetid://17208405682",
+        select = "rbxassetid://15675059323", notify = "rbxassetid://17208361335", alert = "rbxassetid://17208372272",
+        flip = "rbxassetid://15675037413", bookOpen = "rbxassetid://15675024286", bookClose = "rbxassetid://9118833191",
+        copy = "rbxassetid://17208399163",
+    }
+    local sfxCache, sfxLast = {}, {}
+    local sfxFolder
+    pcall(function()
+        sfxFolder = Instance.new("Folder")
+        sfxFolder.Name = "ZeroHubSounds"
+        sfxFolder.Parent = game:GetService("SoundService")
+    end)
+    local function sfx(key, vol)
+        if not Lib.SoundOn or Lib.Unloaded then return end
+        local id = SFX[key]
+        if not id then return end
+        local now = os.clock()
+        if sfxLast[key] and now - sfxLast[key] < 0.05 then return end
+        sfxLast[key] = now
+        pcall(function()
+            local snd = sfxCache[key]
+            if not snd then
+                snd = Instance.new("Sound")
+                snd.Name = key
+                snd.SoundId = id
+                snd.Parent = sfxFolder or game:GetService("SoundService")
+                sfxCache[key] = snd
+            end
+            snd.Volume = math.clamp((tonumber(Lib.Volume) or 0.5) * (vol or 1), 0, 3)
+            game:GetService("SoundService"):PlayLocalSound(snd)
+        end)
+    end
+    Lib.PlaySound = function(_, key, vol) sfx(key, vol) end
+    function Lib:SetSounds(on) Lib.SoundOn = on and true or false end
+    function Lib:SetVolume(v) Lib.Volume = math.clamp(tonumber(v) or 0.5, 0, 2) end
     function Lib:SetEffects(on)
         Lib.FX = on and true or false
         for _, e in ipairs(Lib._glows) do pcall(e.paint) end
@@ -464,6 +503,7 @@ local Library = (function()
         onAccent(function() paint(false) end)
         connect(hit.MouseButton1Click, function()
             sw.Value = not sw.Value
+            sfx(sw.Value and "on" or "off")
             paint(true)
             if sw.Value and Lib.FX then
                 local ring = inst("Frame", {
@@ -491,7 +531,10 @@ local Library = (function()
         pad(b, 16, 16, 0, 0)
         connect(b.MouseEnter, function() tw(b, 0.12, { BackgroundColor3 = base:Lerp(Color3.new(1, 1, 1), 0.1) }) end)
         connect(b.MouseLeave, function() tw(b, 0.15, { BackgroundColor3 = base }) end)
-        connect(b.MouseButton1Click, function() pressed() end)
+        connect(b.MouseButton1Click, function()
+            sfx("click")
+            pressed()
+        end)
         press(b)
         return b
     end
@@ -519,6 +562,7 @@ local Library = (function()
     end
 
     function Lib:Confirm(c)
+        sfx("alert")
         if not gui.Enabled then Lib:ToggleUI() end
         local f = openPopup(nil, 380, 236)
         f.ClipsDescendants = true
@@ -750,13 +794,6 @@ local Library = (function()
         local opt = { Type = kind, Value = nil, _cbs = {}, Title = cfg.Title }
         function opt:OnChanged(fn) table.insert(self._cbs, fn) end
         function opt:_fire()
-            if kind == "Toggle" and id and Lib._islandPush and not Lib._loading and not Lib.StatusIgnore[id] then
-                local on = self.Value and true or false
-                pcall(Lib._islandPush, {
-                    title = tostring(cfg.Title or id), sub = on and "Turned on" or "Turned off", icon = on and "bolt" or "power",
-                    switch = on, color = on and accent() or C.Raise, duration = 1.6,
-                })
-            end
             if cfg.Callback then task.spawn(safe, cfg.Callback, self.Value) end
             for _, fn in ipairs(self._cbs) do task.spawn(safe, fn, self.Value) end
             if not self.NoSave and Lib.QueueSave then Lib:QueueSave() end
@@ -801,7 +838,7 @@ local Library = (function()
 
     Lib.Folder = "ZeroX UI"
     Lib.Name = "ZeroX UI"
-    Lib.Version = "3.7"
+    Lib.Version = "3.8"
     Lib.AutoSave = false
     local function fsOk() return writefile and readfile and isfile end
     function Lib:EnsureFolder(path)
@@ -1424,6 +1461,7 @@ local Library = (function()
                 W.active.page.Visible = false
                 W.active.paint(false)
             end
+            if W.active then sfx("tab") end
             W.active = tab
             tab.page.Visible = true
             tab.paint(true)
@@ -1535,6 +1573,7 @@ local Library = (function()
             return nil
         end
         function W.openPalette()
+            sfx("open")
             local f = openPopup(nil, 540, 430)
             f.ClipsDescendants = true
             if Lib.FX then
@@ -1686,6 +1725,7 @@ local Library = (function()
                         b.MouseLeave:Connect(function() tw(b, 0.15, { BackgroundTransparency = 1 }) end)
                         b.MouseButton1Click:Connect(function()
                             closePopup()
+                            sfx("select")
                             W.jumpTo(e)
                         end)
                     end
@@ -1937,6 +1977,7 @@ local Library = (function()
                         local my = held.n
                         sb.BackgroundColor3 = C.Hover
                         commit(opt.Value + dir * step, true)
+                        sfx("tick", 0.8)
                         task.delay(0.4, function()
                             while held.n == my and not Lib.Unloaded do
                                 commit(opt.Value + dir * step)
@@ -1966,7 +2007,11 @@ local Library = (function()
                     commit(fromX(i.Position.X), Lib.FX)
                 end)
                 connect(UIS.InputChanged, function(i)
-                    if dragging and isMove(i) then commit(fromX(i.Position.X)) end
+                    if dragging and isMove(i) then
+                        local before = opt.Value
+                        commit(fromX(i.Position.X))
+                        if opt.Value ~= before then sfx("tick", 0.6) end
+                    end
                 end)
                 connect(UIS.InputEnded, function(i)
                     if dragging and isPress(i) then
@@ -2134,6 +2179,7 @@ local Library = (function()
                         ease(f, 0.35, { Size = UDim2.fromOffset(f.Size.X.Offset, fullH) })
                     end
                     menuOpen = true
+                    sfx("open")
                     W.ddOpen = btn
                     ease(chev, 0.3, { Rotation = 180 }, Enum.EasingStyle.Back)
                     tw(cbg, 0.2, { BackgroundColor3 = accent() })
@@ -2307,12 +2353,14 @@ local Library = (function()
                         b.MouseButton1Click:Connect(function()
                             if multi then
                                 opt.Value[v] = (not opt.Value[v]) or nil
+                                sfx(opt.Value[v] and "on" or "off")
                                 refresh()
                                 paintItems(true)
                                 count()
                                 opt:_fire()
                             else
                                 paintItems(true)
+                                sfx("select")
                                 if v ~= opt.Value then
                                     opt.Value = v
                                     refresh()
@@ -2567,6 +2615,7 @@ local Library = (function()
                 srvL.Text = srvText
                 connect(srv.MouseButton1Click, function()
                     local ok = pcall(function() (setclipboard or toclipboard)(tostring(game.JobId)) end)
+                    sfx("copy")
                     srvL.Text = ok and "JOB ID COPIED" or "NO CLIPBOARD"
                     srvL.TextColor3 = ok and C.Good or C.Bad
                     task.delay(1.4, function()
@@ -2666,6 +2715,7 @@ local Library = (function()
                         end
                     end)
                     connect(bt.MouseButton1Click, function()
+                        sfx("click")
                         if b.Callback then task.spawn(safe, b.Callback) end
                     end)
                 end
@@ -3321,10 +3371,6 @@ local Library = (function()
                 if moved then
                     Lib.StatusPos = { sb.Position.X.Offset, sb.Position.Y.Offset }
                     if Lib.QueueSave then Lib:QueueSave() end
-                elseif not IS.busy then
-                    Lib._islandPush({
-                        title = Lib.Name, sub = "Session " .. S.run.Text .. "  ·  " .. actL.Text .. " active", icon = "clock", duration = 2,
-                    })
                 end
             end)
             Lib._statusTick = tick
@@ -3545,7 +3591,9 @@ local Library = (function()
                     stat.Text = "R E A D Y"
                     stat.TextColor3 = col:Lerp(Color3.new(1, 1, 1), 0.3)
                 end)
+                sfx("bookOpen", 0.6)
                 task.delay(0.62, function()
+                    sfx("flip")
                     flip(0, turn, Enum.EasingDirection.InOut)
                     ease(shade, turn, { BackgroundTransparency = 0.2 }, Enum.EasingStyle.Quad, Enum.EasingDirection.In)
                     ease(edgeShadow, turn * 0.5, { BackgroundTransparency = 0.3 }, Enum.EasingStyle.Quad)
@@ -3558,6 +3606,8 @@ local Library = (function()
                 edgeShadow.Position = UDim2.fromOffset(left, cy)
                 shade.BackgroundTransparency = 0.2
                 local d1 = turn * 0.85
+                sfx("flip")
+                task.delay(d1 * 0.8, function() sfx("bookClose") end)
                 flip(w, d1, Enum.EasingDirection.InOut)
                 ease(shade, d1, { BackgroundTransparency = 1 }, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
                 ease(edgeShadow, d1 * 0.5, { BackgroundTransparency = 0.3 }, Enum.EasingStyle.Quad)
@@ -3598,6 +3648,7 @@ local Library = (function()
     }, top)
     list(banners, nil, 8, Enum.HorizontalAlignment.Center)
     function Lib:Notify(ncfg)
+        sfx("notify", 0.8)
         pcall(function()
             local vp = viewport()
             local BW = math.min(360, vp.X - 24)
@@ -3681,6 +3732,7 @@ local Library = (function()
         Lib.Conns = {}
         pcall(function() gui:Destroy() end)
         pcall(function() top:Destroy() end)
+        pcall(function() if sfxFolder then sfxFolder:Destroy() end end)
         if Lib.OnDestroy then pcall(Lib.OnDestroy) end
     end
 
