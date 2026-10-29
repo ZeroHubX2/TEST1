@@ -794,7 +794,7 @@ local Library = (function()
 
     Lib.Folder = "ZeroX UI"
     Lib.Name = "ZeroX UI"
-    Lib.Version = "2.8"
+    Lib.Version = "2.9"
     Lib.AutoSave = false
     local function fsOk() return writefile and readfile and isfile end
     function Lib:EnsureFolder(path)
@@ -3232,59 +3232,102 @@ local Library = (function()
             local w, h = body.Size.X.Offset * sc, body.Size.Y.Offset * sc
             local p = body.Position
             local cx, cy = p.X.Scale * vp.X + p.X.Offset, p.Y.Scale * vp.Y + p.Y.Offset
-            local savedPos = p
-            local holder = inst("Frame", {
-                Name = "Fold", BackgroundTransparency = 1, ClipsDescendants = true, AnchorPoint = Vector2.new(0.5, 0.5),
-                Position = UDim2.fromOffset(cx, cy), Size = UDim2.fromOffset(w + 6, open and 0 or h + 6), ZIndex = 2,
+            local left = cx - w / 2
+            local cover = inst("Frame", {
+                Name = "BookCover", BackgroundColor3 = Color3.fromRGB(14, 14, 17), BorderSizePixel = 0, AnchorPoint = Vector2.new(0, 0.5),
+                Position = UDim2.fromOffset(left, cy), Size = UDim2.fromOffset(open and w or 0, h), ZIndex = 5,
             }, gui)
-            body.Parent = holder
-            body.Position = UDim2.fromScale(0.5, 0.5)
-            local function line(y, tr, lw)
-                local l = inst("Frame", {
-                    BackgroundColor3 = accent(), BorderSizePixel = 0, AnchorPoint = Vector2.new(0.5, 0.5),
-                    Position = UDim2.fromOffset(cx, y), Size = UDim2.fromOffset(lw, 2), BackgroundTransparency = tr, ZIndex = 3,
-                }, gui)
-                inst("UIGradient", {
-                    Transparency = NumberSequence.new({
-                        NumberSequenceKeypoint.new(0, 1), NumberSequenceKeypoint.new(0.15, 0), NumberSequenceKeypoint.new(0.85, 0), NumberSequenceKeypoint.new(1, 1),
-                    }),
-                }, l)
-                return l
+            round(cover, 18)
+            local cl = stroke(cover, 0)
+            cl.Color = accent()
+            cl.Thickness = 1
+            local grad = inst("Frame", { BackgroundColor3 = accent(), BorderSizePixel = 0, Size = UDim2.fromScale(1, 1), ZIndex = 5 }, cover)
+            round(grad, 18)
+            inst("UIGradient", {
+                Rotation = 35,
+                Transparency = NumberSequence.new({ NumberSequenceKeypoint.new(0, 0.7), NumberSequenceKeypoint.new(0.5, 0.95), NumberSequenceKeypoint.new(1, 0.75) }),
+            }, grad)
+            local spine = inst("Frame", { BackgroundColor3 = accent(), BorderSizePixel = 0, Size = UDim2.new(0, 5, 1, 0), ZIndex = 7 }, cover)
+            inst("UIGradient", { Transparency = NumberSequence.new(0, 0.6) }, spine)
+            local mark
+            if cfg.Wordmark then
+                mark = inst("ImageLabel", {
+                    BackgroundTransparency = 1, Image = tostring(cfg.Wordmark), ScaleType = Enum.ScaleType.Fit, AnchorPoint = Vector2.new(0.5, 0.5),
+                    Position = UDim2.fromScale(0.5, 0.46), Size = UDim2.fromScale(0.62, 0.22), ZIndex = 7,
+                }, cover)
+            else
+                mark = text({
+                    Text = string.upper(Lib.Name), FontFace = F.Bold, TextScaled = true, AnchorPoint = Vector2.new(0.5, 0.5),
+                    Position = UDim2.fromScale(0.5, 0.46), Size = UDim2.fromScale(0.62, 0.14), TextXAlignment = Enum.TextXAlignment.Center, ZIndex = 7,
+                }, cover)
             end
-            local top = line(open and cy or cy - h / 2, open and 0 or 1, open and 0 or w)
-            local bot = line(open and cy or cy + h / 2, open and 0 or 1, open and 0 or w)
+            local subL = text({
+                Text = string.upper(baseSub ~= "" and baseSub or "WELCOME"), FontFace = F.Bold, TextScaled = true, TextColor3 = accent(),
+                AnchorPoint = Vector2.new(0.5, 0), Position = UDim2.fromScale(0.5, 0.6), Size = UDim2.fromScale(0.4, 0.045),
+                TextXAlignment = Enum.TextXAlignment.Center, ZIndex = 7,
+            }, cover)
+            local shade = inst("Frame", { BackgroundColor3 = Color3.new(0, 0, 0), BackgroundTransparency = 1, BorderSizePixel = 0, Size = UDim2.fromScale(1, 1), ZIndex = 8 }, cover)
+            round(shade, 18)
+            local edgeShadow = inst("Frame", {
+                BackgroundColor3 = Color3.new(0, 0, 0), BorderSizePixel = 0, Position = UDim2.fromScale(1, 0), Size = UDim2.new(0, 70, 1, 0),
+                BackgroundTransparency = 0.35, ZIndex = 4,
+            }, cover)
+            inst("UIGradient", { Transparency = NumberSequence.new(0, 1) }, edgeShadow)
+            Lib._animWin = true
             local finished = false
             local function finish()
                 if finished then return end
                 finished = true
-                body.Parent = gui
-                body.Position = savedPos
-                pcall(function() holder:Destroy() end)
-                pcall(function() top:Destroy() end)
-                pcall(function() bot:Destroy() end)
+                pcall(function() cover:Destroy() end)
+                Lib._animWin = false
+                fit.Scale = Lib._baseScale or sc
                 Lib._folding = false
                 if done then pcall(done) end
             end
+            local turn = 0.6
             if open then
-                ease(top, 0.26, { Size = UDim2.fromOffset(w, 2) }, Enum.EasingStyle.Quart)
-                ease(bot, 0.26, { Size = UDim2.fromOffset(w, 2) }, Enum.EasingStyle.Quart)
-                task.delay(0.24, function()
-                    ease(holder, 0.5, { Size = UDim2.fromOffset(w + 6, h + 6) }, Enum.EasingStyle.Quint)
-                    ease(top, 0.5, { Position = UDim2.fromOffset(cx, cy - h / 2), BackgroundTransparency = 1 }, Enum.EasingStyle.Quint)
-                    ease(bot, 0.5, { Position = UDim2.fromOffset(cx, cy + h / 2), BackgroundTransparency = 1 }, Enum.EasingStyle.Quint)
-                    task.delay(0.52, finish)
+                cover.Size = UDim2.fromOffset(w, h)
+                local cs = inst("UIScale", { Scale = 0.92 }, cover)
+                fit.Scale = sc * 0.96
+                ease(cs, 0.28, { Scale = 1 }, Enum.EasingStyle.Back)
+                if mark:IsA("ImageLabel") then
+                    mark.ImageTransparency = 1
+                    ease(mark, 0.25, { ImageTransparency = 0 })
+                else
+                    mark.TextTransparency = 1
+                    ease(mark, 0.25, { TextTransparency = 0 })
+                end
+                task.delay(0.42, function()
+                    ease(cover, turn, { Size = UDim2.fromOffset(0, h) }, Enum.EasingStyle.Quart, Enum.EasingDirection.InOut)
+                    ease(shade, turn, { BackgroundTransparency = 0.25 }, Enum.EasingStyle.Quad, Enum.EasingDirection.In)
+                    ease(edgeShadow, turn, { BackgroundTransparency = 0.1 }, Enum.EasingStyle.Quad)
+                    ease(fit, turn + 0.15, { Scale = sc }, Enum.EasingStyle.Back)
+                    task.delay(turn + 0.05, finish)
                 end)
             else
-                ease(holder, 0.32, { Size = UDim2.fromOffset(w + 6, 0) }, Enum.EasingStyle.Quart, Enum.EasingDirection.In)
-                ease(top, 0.32, { Position = UDim2.fromOffset(cx, cy), BackgroundTransparency = 0 }, Enum.EasingStyle.Quart, Enum.EasingDirection.In)
-                ease(bot, 0.32, { Position = UDim2.fromOffset(cx, cy), BackgroundTransparency = 0 }, Enum.EasingStyle.Quart, Enum.EasingDirection.In)
-                task.delay(0.3, function()
-                    ease(top, 0.2, { Size = UDim2.fromOffset(0, 2) }, Enum.EasingStyle.Quart, Enum.EasingDirection.In)
-                    ease(bot, 0.2, { Size = UDim2.fromOffset(0, 2) }, Enum.EasingStyle.Quart, Enum.EasingDirection.In)
-                    task.delay(0.22, finish)
+                cover.Size = UDim2.fromOffset(0, h)
+                shade.BackgroundTransparency = 0.25
+                ease(cover, turn * 0.85, { Size = UDim2.fromOffset(w, h) }, Enum.EasingStyle.Quart, Enum.EasingDirection.InOut)
+                ease(shade, turn * 0.85, { BackgroundTransparency = 1 }, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
+                ease(fit, turn * 0.85, { Scale = sc * 0.96 }, Enum.EasingStyle.Quad)
+                task.delay(turn * 0.85 + 0.12, function()
+                    local cs = inst("UIScale", { Scale = 1 }, cover)
+                    ease(cs, 0.22, { Scale = 0.9 }, Enum.EasingStyle.Quad, Enum.EasingDirection.In)
+                    ease(cover, 0.22, { BackgroundTransparency = 1 }, Enum.EasingStyle.Quad, Enum.EasingDirection.In)
+                    for _, d in ipairs(cover:GetDescendants()) do
+                        if d:IsA("Frame") then ease(d, 0.2, { BackgroundTransparency = 1 })
+                        elseif d:IsA("ImageLabel") then ease(d, 0.2, { ImageTransparency = 1 })
+                        elseif d:IsA("TextLabel") then ease(d, 0.2, { TextTransparency = 1 })
+                        elseif d:IsA("UIStroke") then ease(d, 0.2, { Transparency = 1 }) end
+                    end
+                    task.delay(0.06, function() if done then body.Visible = false end end)
+                    task.delay(0.24, function()
+                        finish()
+                        body.Visible = true
+                    end)
                 end)
             end
-            task.delay(1.5, finish)
+            task.delay(2.5, finish)
         end
         Lib.OnToggle()
         if Lib.FX then task.defer(function() Lib._fold(true) end) end
