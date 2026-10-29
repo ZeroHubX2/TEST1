@@ -104,6 +104,8 @@ local Library = (function()
         chart = "rbxassetid://71315621261538",
         info = "rbxassetid://140318155547831",
         sparkles = "rbxassetid://105054419961789",
+        power = "rbxassetid://91472904792853",
+        warn = "rbxassetid://107822175160368",
     }
     local SectionIcons = {
         { "appearance", "palette" }, { "attack", "bolt" }, { "buy", "cart" }, { "purchase", "cart" }, { "shop", "cart" },
@@ -326,20 +328,31 @@ local Library = (function()
         tipLine.Color = accent()
         local sc = Lib._fit and Lib._fit.Scale or 1
         tipScale.Scale = sc
-        tipF.Position = UDim2.fromOffset(-1000, -1000)
-        tipF.Visible = true
-        task.defer(function()
-            if Tip.tok ~= my then return end
+        local function place()
             local vp = viewport()
             local ap, as = anchor.AbsolutePosition, anchor.AbsoluteSize
-            local sz = tipF.AbsoluteSize
-            local x = math.clamp(ap.X + as.X / 2 - sz.X / 2, 8, math.max(8, vp.X - sz.X - 8))
-            local y = ap.Y - sz.Y - 8
-            if y < 8 then y = ap.Y + as.Y + 8 end
-            tipF.Position = UDim2.fromOffset(x, y)
-            if Lib.FX then
-                tipScale.Scale = sc * 0.85
-                ease(tipScale, 0.22, { Scale = sc }, Enum.EasingStyle.Back)
+            local half = tipF.AbsoluteSize.X / 2
+            local x = math.clamp(ap.X + as.X / 2, half + 8, math.max(half + 8, vp.X - half - 8))
+            if ap.Y - tipF.AbsoluteSize.Y - 10 < 4 then
+                tipF.AnchorPoint = Vector2.new(0.5, 0)
+                tipF.Position = UDim2.fromOffset(x, ap.Y + as.Y + 6)
+            else
+                tipF.AnchorPoint = Vector2.new(0.5, 1)
+                tipF.Position = UDim2.fromOffset(x, ap.Y - 6)
+            end
+        end
+        tipF.AnchorPoint = Vector2.new(0.5, 1)
+        place()
+        tipF.Visible = true
+        if Lib.FX then
+            tipScale.Scale = sc * 0.85
+            ease(tipScale, 0.22, { Scale = sc }, Enum.EasingStyle.Back)
+        end
+        task.spawn(function()
+            for _ = 1, 20 do
+                if Tip.tok ~= my then return end
+                pcall(place)
+                task.wait()
             end
         end)
         task.delay(5, function() if Tip.tok == my then hideTip() end end)
@@ -499,20 +512,83 @@ local Library = (function()
 
     function Lib:Confirm(c)
         if not gui.Enabled then Lib:ToggleUI() end
-        local f = openPopup(nil, 360, 190)
-        pad(f, 22, 22, 20, 18)
-        text({ Text = tostring(c.Title or "Are you sure?"), FontFace = F.Bold, TextSize = 19, Size = UDim2.new(1, 0, 0, 26) }, f)
+        local f = openPopup(nil, 380, 236)
+        f.ClipsDescendants = true
+        local danger = c.Danger ~= false
+        local col = danger and Color3.fromRGB(200, 30, 44) or accent()
+        local topBar = inst("Frame", { BackgroundColor3 = col, BorderSizePixel = 0, Size = UDim2.new(1, 0, 0, 3), ZIndex = 52 }, f)
+        inst("UIGradient", {
+            Transparency = NumberSequence.new({ NumberSequenceKeypoint.new(0, 1), NumberSequenceKeypoint.new(0.5, 0), NumberSequenceKeypoint.new(1, 1) }),
+        }, topBar)
+        local tile = inst("Frame", {
+            BackgroundColor3 = col:Lerp(Color3.new(0, 0, 0), 0.75), BorderSizePixel = 0, AnchorPoint = Vector2.new(0.5, 0),
+            Position = UDim2.new(0.5, 0, 0, 22), Size = UDim2.fromOffset(52, 52), ZIndex = 52,
+        }, f)
+        round(tile)
+        local tl = stroke(tile, 0)
+        tl.Color = col
+        local ic = icon(c.Icon or (danger and "power" or "info"), 24, tile, col:Lerp(Color3.new(1, 1, 1), 0.2))
+        ic.AnchorPoint = Vector2.new(0.5, 0.5)
+        ic.Position = UDim2.fromScale(0.5, 0.5)
+        ic.ZIndex = 53
+        local ring = inst("Frame", {
+            BackgroundTransparency = 1, AnchorPoint = Vector2.new(0.5, 0.5), Position = UDim2.fromScale(0.5, 0.5),
+            Size = UDim2.fromOffset(52, 52), ZIndex = 52,
+        }, tile)
+        round(ring)
+        local rs = inst("UIStroke", { Color = col, Thickness = 2 }, ring)
+        text({
+            Text = tostring(c.Title or "Are you sure?"), FontFace = F.Bold, TextSize = 18, AnchorPoint = Vector2.new(0.5, 0),
+            Position = UDim2.new(0.5, 0, 0, 86), Size = UDim2.new(1, -40, 0, 24), TextXAlignment = Enum.TextXAlignment.Center, ZIndex = 52,
+        }, f)
         text({
             Text = tostring(c.Content or ""), FontFace = F.Med, TextSize = 13, TextColor3 = C.Sub, TextWrapped = true,
-            TextYAlignment = Enum.TextYAlignment.Top, Position = UDim2.fromOffset(0, 36), Size = UDim2.new(1, 0, 0, 60),
+            TextYAlignment = Enum.TextYAlignment.Top, TextXAlignment = Enum.TextXAlignment.Center, AnchorPoint = Vector2.new(0.5, 0),
+            Position = UDim2.new(0.5, 0, 0, 114), Size = UDim2.new(1, -48, 0, 40), ZIndex = 52,
         }, f)
-        local row = inst("Frame", { BackgroundTransparency = 1, AnchorPoint = Vector2.new(0, 1), Position = UDim2.fromScale(0, 1), Size = UDim2.new(1, 0, 0, 40) }, f)
-        list(row, Enum.FillDirection.Horizontal, 10, Enum.HorizontalAlignment.Right, Enum.VerticalAlignment.Center)
-        makeButton(row, "Cancel", closePopup).LayoutOrder = 1
-        makeButton(row, tostring(c.Button or "OK"), function()
+        local row = inst("Frame", { BackgroundTransparency = 1, AnchorPoint = Vector2.new(0.5, 1), Position = UDim2.new(0.5, 0, 1, -18), Size = UDim2.new(1, -36, 0, 38), ZIndex = 52 }, f)
+        list(row, Enum.FillDirection.Horizontal, 10, nil, Enum.VerticalAlignment.Center)
+        local cb = makeButton(row, tostring(c.CancelText or "Cancel"), closePopup)
+        local ob = makeButton(row, tostring(c.Button or "OK"), function()
             closePopup()
             if c.Callback then task.spawn(safe, c.Callback) end
-        end, Color3.fromRGB(200, 30, 44)).LayoutOrder = 2
+        end, col)
+        for k, bt in ipairs({ cb, ob }) do
+            bt.AutomaticSize = Enum.AutomaticSize.None
+            bt.Size = UDim2.new(0.5, -5, 0, 38)
+            bt.LayoutOrder = k
+            bt.ZIndex = 52
+        end
+        local shine = inst("UIGradient", {
+            Color = ColorSequence.new({
+                ColorSequenceKeypoint.new(0, Color3.fromRGB(200, 200, 200)), ColorSequenceKeypoint.new(0.45, Color3.fromRGB(200, 200, 200)),
+                ColorSequenceKeypoint.new(0.5, Color3.new(1, 1, 1)), ColorSequenceKeypoint.new(0.55, Color3.fromRGB(200, 200, 200)),
+                ColorSequenceKeypoint.new(1, Color3.fromRGB(200, 200, 200)),
+            }),
+            Offset = Vector2.new(-1, 0), Rotation = 20,
+        }, ob)
+        if Lib.FX then
+            local full = f.Size
+            f.Size = UDim2.fromOffset(full.X.Offset, 0)
+            ease(f, 0.4, { Size = full })
+            tile.Size = UDim2.fromOffset(0, 0)
+            task.delay(0.12, function() ease(tile, 0.45, { Size = UDim2.fromOffset(52, 52) }, Enum.EasingStyle.Back) end)
+            ic.Rotation = -120
+            task.delay(0.12, function() ease(ic, 0.5, { Rotation = 0 }, Enum.EasingStyle.Back) end)
+            task.spawn(function()
+                while f.Parent do
+                    ring.Size = UDim2.fromOffset(52, 52)
+                    rs.Transparency = 0.1
+                    ease(ring, 1.1, { Size = UDim2.fromOffset(84, 84) }, Enum.EasingStyle.Quad)
+                    ease(rs, 1.1, { Transparency = 1 }, Enum.EasingStyle.Quad)
+                    shine.Offset = Vector2.new(-1, 0)
+                    ease(shine, 0.9, { Offset = Vector2.new(1, 0) }, Enum.EasingStyle.Quad, Enum.EasingDirection.InOut)
+                    task.wait(1.4)
+                end
+            end)
+        else
+            rs.Transparency = 1
+        end
     end
 
     Lib._toggles = {}
@@ -707,7 +783,7 @@ local Library = (function()
 
     Lib.Folder = "ZeroX UI"
     Lib.Name = "ZeroX UI"
-    Lib.Version = "2.4"
+    Lib.Version = "2.5"
     Lib.AutoSave = false
     local function fsOk() return writefile and readfile and isfile end
     function Lib:EnsureFolder(path)
@@ -1400,30 +1476,103 @@ local Library = (function()
                 task.delay(1, function() tw(t, 0.6, { TextColor3 = C.Text }) end)
             end)
         end
+        local function valueOf(r)
+            local o = r.opt
+            if not o then return nil end
+            if r.kind == "Toggle" then return o.Value and "On" or "Off", o.Value end
+            if r.kind == "Slider" then return tostring(o.Value) .. (r.unit and r.unit ~= "" and (" " .. r.unit) or "") end
+            if r.kind == "Dropdown" then
+                if o.Multi then
+                    local k = 0
+                    for _, x in pairs(o.Value or {}) do if x then k = k + 1 end end
+                    return k .. " selected"
+                end
+                return tostring(o.Value or "-")
+            end
+            if r.kind == "Input" then return tostring(o.Value or "") end
+            return nil
+        end
         function W.openPalette()
-            local f = openPopup(nil, 500, 400)
-            pad(f, 14, 14, 14, 14)
+            local f = openPopup(nil, 540, 430)
+            f.ClipsDescendants = true
+            if Lib.FX then
+                local full = f.Size
+                f.Size = UDim2.fromOffset(full.X.Offset, 0)
+                ease(f, 0.4, { Size = full })
+            end
+            local head = inst("Frame", { BackgroundTransparency = 1, Position = UDim2.fromOffset(18, 16), Size = UDim2.new(1, -36, 0, 34), ZIndex = 52 }, f)
+            local tile = inst("Frame", { BackgroundColor3 = accent():Lerp(Color3.new(0, 0, 0), 0.75), BorderSizePixel = 0, Size = UDim2.fromOffset(34, 34), ZIndex = 52 }, head)
+            round(tile, 10)
+            stroke(tile, 0.3).Color = accent()
+            local ti = icon("search", 16, tile, accent():Lerp(Color3.new(1, 1, 1), 0.3))
+            ti.AnchorPoint = Vector2.new(0.5, 0.5)
+            ti.Position = UDim2.fromScale(0.5, 0.5)
+            ti.ZIndex = 53
+            text({ Text = "Search", FontFace = F.Bold, TextSize = 17, Position = UDim2.fromOffset(46, -1), Size = UDim2.new(1, -150, 0, 20), ZIndex = 52 }, head)
+            text({ Text = "Find any setting in every tab", FontFace = F.Med, TextSize = 12, TextColor3 = C.Sub, Position = UDim2.fromOffset(46, 18), Size = UDim2.new(1, -150, 0, 16), ZIndex = 52 }, head)
+            local key = text({
+                Text = (UIS.TouchEnabled and not UIS.KeyboardEnabled) and "Tap a result" or "Ctrl + F", FontFace = F.Semi, TextSize = 11,
+                TextColor3 = C.Sub, BackgroundColor3 = C.Raise, BackgroundTransparency = 0, AnchorPoint = Vector2.new(1, 0.5),
+                Position = UDim2.new(1, 0, 0.5, 0), AutomaticSize = Enum.AutomaticSize.X, Size = UDim2.fromOffset(0, 22),
+                TextXAlignment = Enum.TextXAlignment.Center, ZIndex = 52,
+            }, head)
+            round(key, 6)
+            pad(key, 8, 8, 0, 0)
+            stroke(key, 0.85)
             local qbox = inst("TextBox", {
-                BackgroundColor3 = C.Raise, BorderSizePixel = 0, Size = UDim2.new(1, 0, 0, 42), FontFace = F.Med, TextSize = 15,
-                TextColor3 = C.Text, PlaceholderText = "Search every setting", PlaceholderColor3 = C.Sub, Text = "",
-                ClearTextOnFocus = false, TextXAlignment = Enum.TextXAlignment.Left,
+                BackgroundColor3 = C.Raise, BorderSizePixel = 0, Position = UDim2.fromOffset(18, 62), Size = UDim2.new(1, -36, 0, 44),
+                FontFace = F.Med, TextSize = 15, TextColor3 = C.Text, PlaceholderText = "Type a setting, like height or auto farm",
+                PlaceholderColor3 = C.Dim, Text = "", ClearTextOnFocus = false, TextXAlignment = Enum.TextXAlignment.Left, ZIndex = 52,
             }, f)
-            round(qbox, 10)
-            pad(qbox, 40, 12, 0, 0)
-            local qs = stroke(qbox, 0.4)
-            qs.Color = accent()
-            local qi = icon("search", 16, qbox, C.Sub)
-            qi.AnchorPoint = Vector2.new(0, 0.5)
-            qi.Position = UDim2.new(0, -28, 0.5, 0)
+            round(qbox, 11)
+            pad(qbox, 16, 16, 0, 0)
+            local qs = stroke(qbox, 0.85)
+            connect(qbox.Focused, function() tw(qs, 0.2, { Color = accent(), Transparency = 0.2 }) end)
+            connect(qbox.FocusLost, function() tw(qs, 0.2, { Color = C.Line, Transparency = 0.85 }) end)
+            local label = text({
+                Text = "JUMP TO", FontFace = F.Bold, TextSize = 11, TextColor3 = C.Dim, Position = UDim2.fromOffset(20, 118),
+                Size = UDim2.new(1, -40, 0, 14), ZIndex = 52,
+            }, f)
+            local chips = inst("Frame", { BackgroundTransparency = 1, Position = UDim2.fromOffset(18, 138), Size = UDim2.new(1, -36, 0, 0), AutomaticSize = Enum.AutomaticSize.Y, ZIndex = 52 }, f)
+            local cg = inst("UIGridLayout", { CellPadding = UDim2.fromOffset(8, 8), CellSize = UDim2.new(1 / 3, -6, 0, 46), SortOrder = Enum.SortOrder.LayoutOrder }, chips)
+            for i, tb in ipairs(Window.Tabs) do
+                local cbtn = inst("TextButton", { Text = "", AutoButtonColor = false, BackgroundColor3 = C.Raise, BorderSizePixel = 0, LayoutOrder = i, ZIndex = 52 }, chips)
+                round(cbtn, 11)
+                local cl = stroke(cbtn, 0.9)
+                local ci = icon(tb.icon, 16, cbtn, C.Sub)
+                ci.AnchorPoint = Vector2.new(0, 0.5)
+                ci.Position = UDim2.new(0, 14, 0.5, 0)
+                ci.ZIndex = 53
+                text({
+                    Text = tostring(tb.Title or ""), FontFace = F.Semi, TextSize = 13, Position = UDim2.fromOffset(38, 0), Size = UDim2.new(1, -46, 1, 0),
+                    TextTruncate = Enum.TextTruncate.AtEnd, ZIndex = 53,
+                }, cbtn)
+                if Lib.FX then
+                    local sc0 = inst("UIScale", { Scale = 0.6 }, cbtn)
+                    task.delay(0.1 + (i - 1) * 0.04, function() ease(sc0, 0.4, { Scale = 1 }, Enum.EasingStyle.Back) end)
+                end
+                cbtn.MouseEnter:Connect(function()
+                    tw(cl, 0.15, { Color = accent(), Transparency = 0.3 })
+                    tw(ci, 0.15, { ImageColor3 = accent() })
+                end)
+                cbtn.MouseLeave:Connect(function()
+                    tw(cl, 0.2, { Color = C.Line, Transparency = 0.9 })
+                    tw(ci, 0.2, { ImageColor3 = C.Sub })
+                end)
+                cbtn.MouseButton1Click:Connect(function()
+                    closePopup()
+                    select(tb)
+                end)
+            end
             local res = inst("ScrollingFrame", {
-                BackgroundTransparency = 1, BorderSizePixel = 0, Position = UDim2.fromOffset(0, 52), Size = UDim2.new(1, 0, 1, -52),
+                BackgroundTransparency = 1, BorderSizePixel = 0, Position = UDim2.fromOffset(12, 138), Size = UDim2.new(1, -24, 1, -150),
                 CanvasSize = UDim2.new(), AutomaticCanvasSize = Enum.AutomaticSize.Y, ScrollingDirection = Enum.ScrollingDirection.Y,
-                ScrollBarThickness = 3, ScrollBarImageColor3 = C.Dim,
+                ScrollBarThickness = 3, ScrollBarImageColor3 = C.Dim, Visible = false, ZIndex = 52,
             }, f)
             list(res, nil, 4)
-            local hint = text({
-                Text = "Type to search every tab", FontFace = F.Med, TextSize = 13, TextColor3 = C.Dim, Size = UDim2.new(1, 0, 0, 36),
-                TextXAlignment = Enum.TextXAlignment.Center, LayoutOrder = 0,
+            local empty = text({
+                Text = "", FontFace = F.Med, TextSize = 13, TextColor3 = C.Dim, Size = UDim2.new(1, 0, 0, 60),
+                TextXAlignment = Enum.TextXAlignment.Center, LayoutOrder = 0, ZIndex = 52,
             }, res)
             local index = {}
             for _, tb in ipairs(Window.Tabs) do
@@ -1440,9 +1589,11 @@ local Library = (function()
                     if ch:IsA("TextButton") then ch:Destroy() end
                 end
                 q = string.lower(q or "")
-                hint.Text = "Type to search every tab"
-                hint.Visible = q == ""
-                if q == "" then return end
+                local searching = q ~= ""
+                chips.Visible = not searching
+                res.Visible = searching
+                label.Text = searching and "RESULTS" or "JUMP TO"
+                if not searching then return end
                 local n = 0
                 for _, e in ipairs(index) do
                     if n >= 40 then break end
@@ -1450,36 +1601,57 @@ local Library = (function()
                     if hay:find(q, 1, true) then
                         n = n + 1
                         local b = inst("TextButton", {
-                            Text = "", AutoButtonColor = false, BackgroundColor3 = C.Hover, BackgroundTransparency = 1, BorderSizePixel = 0,
-                            Size = UDim2.new(1, -4, 0, 50), LayoutOrder = n,
+                            Text = "", AutoButtonColor = false, BackgroundColor3 = C.Raise, BackgroundTransparency = 1, BorderSizePixel = 0,
+                            Size = UDim2.new(1, -4, 0, 54), LayoutOrder = n, ZIndex = 52,
                         }, res)
-                        round(b, 10)
+                        round(b, 11)
+                        local tile2 = inst("Frame", {
+                            BackgroundColor3 = C.Raise, BorderSizePixel = 0, AnchorPoint = Vector2.new(0, 0.5), Position = UDim2.new(0, 8, 0.5, 0),
+                            Size = UDim2.fromOffset(36, 36), ZIndex = 53,
+                        }, b)
+                        round(tile2, 10)
+                        local i2 = icon(e.tab.icon, 16, tile2, accent():Lerp(Color3.new(1, 1, 1), 0.25))
+                        i2.AnchorPoint = Vector2.new(0.5, 0.5)
+                        i2.Position = UDim2.fromScale(0.5, 0.5)
+                        i2.ZIndex = 54
                         text({
-                            Text = e.row.title.Text, FontFace = F.Semi, TextSize = 14, Position = UDim2.fromOffset(12, 7),
-                            Size = UDim2.new(1, -44, 0, 18), TextTruncate = Enum.TextTruncate.AtEnd,
+                            Text = e.row.title.Text, FontFace = F.Semi, TextSize = 14, Position = UDim2.fromOffset(54, 9),
+                            Size = UDim2.new(1, -170, 0, 18), TextTruncate = Enum.TextTruncate.AtEnd, ZIndex = 53,
                         }, b)
                         text({
                             Text = tostring(e.tab.Title or "") .. (e.card.titleText and ("  ›  " .. e.card.titleText) or ""),
-                            FontFace = F.Med, TextSize = 12, TextColor3 = C.Sub, Position = UDim2.fromOffset(12, 27),
-                            Size = UDim2.new(1, -44, 0, 16), TextTruncate = Enum.TextTruncate.AtEnd,
+                            FontFace = F.Med, TextSize = 12, TextColor3 = C.Sub, Position = UDim2.fromOffset(54, 28),
+                            Size = UDim2.new(1, -170, 0, 16), TextTruncate = Enum.TextTruncate.AtEnd, ZIndex = 53,
                         }, b)
-                        local cv = icon("chevron", 12, b, C.Dim)
-                        cv.Rotation = -90
-                        cv.AnchorPoint = Vector2.new(1, 0.5)
-                        cv.Position = UDim2.new(1, -14, 0.5, 0)
-                        b.MouseEnter:Connect(function() b.BackgroundTransparency = 0.3 end)
-                        b.MouseLeave:Connect(function() b.BackgroundTransparency = 1 end)
+                        local v, on = valueOf(e.row)
+                        if v then
+                            local vc = text({
+                                Text = v, FontFace = F.Semi, TextSize = 12, TextColor3 = (on == true) and Color3.new(1, 1, 1) or C.Sub,
+                                BackgroundColor3 = (on == true) and accent() or C.Raise, BackgroundTransparency = 0, AnchorPoint = Vector2.new(1, 0.5),
+                                Position = UDim2.new(1, -12, 0.5, 0), AutomaticSize = Enum.AutomaticSize.X, Size = UDim2.fromOffset(0, 24),
+                                TextXAlignment = Enum.TextXAlignment.Center, ZIndex = 53,
+                            }, b)
+                            round(vc, 7)
+                            pad(vc, 9, 9, 0, 0)
+                            inst("UISizeConstraint", { MaxSize = Vector2.new(120, 24) }, vc)
+                            vc.TextTruncate = Enum.TextTruncate.AtEnd
+                        end
+                        if Lib.FX and n <= 10 then
+                            local sc1 = inst("UIScale", { Scale = 0.9 }, b)
+                            task.delay((n - 1) * 0.03, function() ease(sc1, 0.3, { Scale = 1 }, Enum.EasingStyle.Back) end)
+                        end
+                        b.MouseEnter:Connect(function() tw(b, 0.12, { BackgroundTransparency = 0 }) end)
+                        b.MouseLeave:Connect(function() tw(b, 0.15, { BackgroundTransparency = 1 }) end)
                         b.MouseButton1Click:Connect(function()
                             closePopup()
                             W.jumpTo(e)
                         end)
                     end
                 end
-                if n == 0 then
-                    hint.Text = 'Nothing matches "' .. q .. '"'
-                    hint.Visible = true
-                end
+                empty.Visible = n == 0
+                empty.Text = n == 0 and ('Nothing matches "' .. q .. '"') or ""
             end
+            render("")
             qbox:GetPropertyChangedSignal("Text"):Connect(function() render(qbox.Text) end)
             task.defer(function() pcall(function() qbox:CaptureFocus() end) end)
         end
@@ -1588,6 +1760,7 @@ local Library = (function()
             function tab:AddToggle(id, ocfg)
                 local r = newRow(cur(), ocfg.Title, ocfg.Description, 56, true)
                 local opt = makeOption(id, "Toggle", ocfg)
+                r.opt, r.kind = opt, "Toggle"
                 opt.Value = ocfg.Default and true or false
                 if id then table.insert(Lib._toggles, { id = id, opt = opt }) end
                 local sw = makeSwitch(r.right, opt.Value, function(v)
@@ -1612,6 +1785,7 @@ local Library = (function()
                 if not name or name == "" then name, unit = title, nil end
                 local r = newRow(cur(), name, ocfg.Description, 130, true)
                 local opt = makeOption(id, "Slider", ocfg)
+                r.opt, r.kind, r.unit = opt, "Slider", unit
                 local function rnd(v)
                     local m = 10 ^ dec
                     return math.floor(v * m + 0.5) / m
@@ -1778,6 +1952,7 @@ local Library = (function()
             function tab:AddInput(id, ocfg)
                 local r = newRow(cur(), ocfg.Title, ocfg.Description, 160, true)
                 local opt = makeOption(id, "Input", ocfg)
+                r.opt, r.kind = opt, "Input"
                 local function norm(v)
                     if ocfg.Numeric then
                         local n = tonumber(v)
@@ -1826,6 +2001,7 @@ local Library = (function()
                 local multi = ocfg.Multi and true or false
                 opt.Multi, opt.Values = multi, ocfg.Values or {}
                 local r = newRow(cur(), ocfg.Title, ocfg.Description, 170, true)
+                r.opt, r.kind = opt, "Dropdown"
                 local btn = inst("TextButton", {
                     Name = "Dropdown", Text = "", AutoButtonColor = false, BackgroundColor3 = C.Raise, BackgroundTransparency = 0,
                     BorderSizePixel = 0, Size = UDim2.fromOffset(170, 40),
