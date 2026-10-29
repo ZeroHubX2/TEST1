@@ -801,7 +801,7 @@ local Library = (function()
 
     Lib.Folder = "ZeroX UI"
     Lib.Name = "ZeroX UI"
-    Lib.Version = "3.6"
+    Lib.Version = "3.7"
     Lib.AutoSave = false
     local function fsOk() return writefile and readfile and isfile end
     function Lib:EnsureFolder(path)
@@ -3209,68 +3209,68 @@ local Library = (function()
                 end
             end
 
-            local function runQueue()
-                if IS.busy then return end
-                local item = table.remove(IS.queue, 1)
-                if not item then return end
-                IS.busy = true
+            local function show(item)
+                IS.token = (IS.token or 0) + 1
+                local my = IS.token
+                local wasOpen = IS.mode == "expanded"
                 IS.mode = "expanded"
+                IS.busy = true
                 eTitle.Text = tostring(item.title or "")
                 eSub.Text = tostring(item.sub or "")
                 eIcon.Image = Icons[item.icon or "bolt"] or Icons.bolt
                 local col = item.color or accent()
-                eIconBg.BackgroundColor3 = col
                 eSw.Visible = item.switch ~= nil
                 eTag.Visible = item.tag ~= nil
                 if item.tag then
                     eTag.Text = tostring(item.tag)
                     eTag.BackgroundColor3 = item.tagColor or C.Raise
                 end
-                if item.switch ~= nil then
-                    eSw.BackgroundColor3 = item.switch and C.Track or accent()
-                    eKnob.Position = item.switch and UDim2.new(0, 3, 0.5, 0) or UDim2.new(1, -21, 0.5, 0)
-                end
                 local tw2 = math.max(textWidth(eTitle.Text, 15), textWidth(eSub.Text, 12))
                 local w = math.clamp(tw2 + 150, 260, 420)
                 exp.Visible = true
-                exp.GroupTransparency = 1
-                morph(w, EH, 0.45)
+                morph(w, EH, wasOpen and 0.25 or 0.45)
                 tw(sbLine, 0.3, { Color = col, Transparency = 0.4 })
-                ease(compact, 0.15, { GroupTransparency = 1 })
-                task.delay(0.12, function()
-                    ease(exp, 0.25, { GroupTransparency = 0 })
-                    eIconScale.Scale = 0.4
-                    ease(eIconScale, 0.45, { Scale = 1 }, Enum.EasingStyle.Back)
-                    if item.switch ~= nil then
-                        task.delay(0.15, function()
-                            ease(eSw, 0.25, { BackgroundColor3 = item.switch and accent() or C.Track })
-                            ease(eKnob, 0.35, { Position = item.switch and UDim2.new(1, -21, 0.5, 0) or UDim2.new(0, 3, 0.5, 0) }, Enum.EasingStyle.Back)
-                        end)
-                    end
-                end)
-                local dur = math.clamp(tonumber(item.duration) or 1.8, 1.2, 4)
+                tw(eIconBg, 0.2, { BackgroundColor3 = col })
+                if not wasOpen then
+                    exp.GroupTransparency = 1
+                    ease(compact, 0.15, { GroupTransparency = 1 })
+                    task.delay(0.1, function()
+                        if IS.token == my then ease(exp, 0.22, { GroupTransparency = 0 }) end
+                    end)
+                end
+                eIconScale.Scale = 0.5
+                ease(eIconScale, 0.4, { Scale = 1 }, Enum.EasingStyle.Back)
+                if item.switch ~= nil then
+                    eSw.BackgroundColor3 = item.switch and C.Track or accent()
+                    eKnob.Position = item.switch and UDim2.new(0, 3, 0.5, 0) or UDim2.new(1, -21, 0.5, 0)
+                    task.delay(0.12, function()
+                        if IS.token ~= my then return end
+                        ease(eSw, 0.22, { BackgroundColor3 = item.switch and accent() or C.Track })
+                        ease(eKnob, 0.3, { Position = item.switch and UDim2.new(1, -21, 0.5, 0) or UDim2.new(0, 3, 0.5, 0) }, Enum.EasingStyle.Back)
+                    end)
+                end
+                local dur = math.clamp(tonumber(item.duration) or 1.6, 0.8, 4)
                 eBar.Size = UDim2.fromScale(1, 1)
                 TweenService:Create(eBar, TweenInfo.new(dur, Enum.EasingStyle.Linear), { Size = UDim2.fromScale(0, 1) }):Play()
                 task.delay(dur, function()
-                    ease(exp, 0.18, { GroupTransparency = 1 })
-                    task.delay(0.12, function()
+                    if IS.token ~= my then return end
+                    ease(exp, 0.16, { GroupTransparency = 1 })
+                    task.delay(0.1, function()
+                        if IS.token ~= my then return end
                         exp.Visible = false
                         IS.mode = "compact"
-                        morph(compactWidth(), H, 0.45)
-                        tw(sbLine, 0.3, { Color = C.Line, Transparency = 0.85 })
-                        ease(compact, 0.3, { GroupTransparency = 0 })
-                        task.delay(0.35, function()
-                            IS.busy = false
-                            runQueue()
+                        morph(compactWidth(), H, 0.4)
+                        tw(sbLine, 0.3, { Color = C.Line, Transparency = 0.75 })
+                        ease(compact, 0.25, { GroupTransparency = 0 })
+                        task.delay(0.3, function()
+                            if IS.token == my then IS.busy = false end
                         end)
                     end)
                 end)
             end
             function Lib._islandPush(item)
                 if not (Lib.StatusOn and sb.Visible) then return false end
-                if #IS.queue >= 4 then table.remove(IS.queue, 1) end
-                table.insert(IS.queue, item)
-                runQueue()
+                show(item)
                 return true
             end
 
@@ -3592,61 +3592,85 @@ local Library = (function()
         return Window
     end
 
+    local banners = inst("Frame", {
+        Name = "Banners", BackgroundTransparency = 1, AnchorPoint = Vector2.new(0.5, 0), Position = UDim2.new(0.5, 0, 0, 60),
+        Size = UDim2.fromOffset(360, 0), AutomaticSize = Enum.AutomaticSize.Y,
+    }, top)
+    list(banners, nil, 8, Enum.HorizontalAlignment.Center)
     function Lib:Notify(ncfg)
-        if Lib._islandPush and pcall(function() return true end) then
-            local ok, shown = pcall(Lib._islandPush, {
-                title = tostring(ncfg.Title or Lib.Name), sub = tostring(ncfg.Content or ""), icon = ncfg.Icon or "info",
-                duration = tonumber(ncfg.Duration) or 3,
-            })
-            if ok and shown then return end
-        end
         pcall(function()
+            local vp = viewport()
+            local BW = math.min(360, vp.X - 24)
+            local y = 10
+            local sbf = Lib._statusBar
+            if sbf and sbf.Visible and Lib.StatusOn then y = sbf.Position.Y.Offset + sbf.AbsoluteSize.Y + 10 end
+            banners.Size = UDim2.fromOffset(BW, 0)
+            banners.Position = UDim2.new(0.5, 0, 0, y)
             Lib._toastN = (Lib._toastN or 0) + 1
-            local holder = inst("Frame", {
-                Name = "Toast", BackgroundTransparency = 1, AutomaticSize = Enum.AutomaticSize.Y,
-                Size = UDim2.fromOffset(300, 0), LayoutOrder = Lib._toastN,
-            }, nil)
-            local f = inst("Frame", {
-                BackgroundColor3 = C.Bg, BackgroundTransparency = 0.04, BorderSizePixel = 0, AutomaticSize = Enum.AutomaticSize.Y,
-                Size = UDim2.fromOffset(300, 0), Position = UDim2.fromOffset(Lib.FX and 340 or 0, 0),
-            }, holder)
-            round(f, 16)
-            stroke(f, 0.6, accent())
-            pad(f, 16, 16, 12, 10)
-            list(f, nil, 3)
+            local CH = 74
+            local wrapB = inst("Frame", { Name = "Banner", BackgroundTransparency = 1, Size = UDim2.new(1, 0, 0, Lib.FX and 0 or CH), LayoutOrder = -Lib._toastN }, banners)
+            local card = inst("CanvasGroup", {
+                BackgroundColor3 = Color3.fromRGB(20, 20, 24), BorderSizePixel = 0, Size = UDim2.new(1, 0, 0, CH),
+                Position = UDim2.fromOffset(0, Lib.FX and -(CH + 24) or 0), GroupTransparency = Lib.FX and 1 or 0,
+            }, wrapB)
+            round(card, 18)
+            local cs = stroke(card, 0.85)
+            local col = ncfg.Color or accent()
+            local tile = inst("Frame", { BackgroundColor3 = col, BorderSizePixel = 0, AnchorPoint = Vector2.new(0, 0.5), Position = UDim2.new(0, 14, 0.5, 0), Size = UDim2.fromOffset(40, 40) }, card)
+            round(tile, 12)
+            inst("UIGradient", { Rotation = 45, Color = ColorSequence.new(Color3.new(1, 1, 1), Color3.fromRGB(170, 170, 170)) }, tile)
+            local ti = icon(ncfg.Icon or "info", 19, tile, Color3.new(1, 1, 1))
+            ti.AnchorPoint = Vector2.new(0.5, 0.5)
+            ti.Position = UDim2.fromScale(0.5, 0.5)
             text({
-                Text = tostring(ncfg.Title or Lib.Name), FontFace = F.Bold, TextSize = 14, TextWrapped = true,
-                AutomaticSize = Enum.AutomaticSize.Y, Size = UDim2.fromScale(1, 0), LayoutOrder = 1,
-            }, f)
-            local content = tostring(ncfg.Content or "")
-            if content ~= "" then
-                text({
-                    Text = content, FontFace = F.Med, TextSize = 13, TextColor3 = C.Sub, TextWrapped = true,
-                    AutomaticSize = Enum.AutomaticSize.Y, Size = UDim2.fromScale(1, 0), LayoutOrder = 2,
-                }, f)
-            end
-            inst("Frame", { BackgroundTransparency = 1, Size = UDim2.new(1, 0, 0, 4), LayoutOrder = 3 }, f)
-            local track = inst("Frame", { BackgroundColor3 = C.Track, BackgroundTransparency = 0.3, BorderSizePixel = 0, Size = UDim2.new(1, 0, 0, 3), LayoutOrder = 4 }, f)
-            round(track)
-            local bar = inst("Frame", { BackgroundColor3 = accent(), BorderSizePixel = 0, Size = UDim2.fromScale(1, 1) }, track)
+                Text = string.upper(Lib.Name), FontFace = F.Bold, TextSize = 11, TextColor3 = C.Sub, Position = UDim2.fromOffset(66, 11),
+                Size = UDim2.new(1, -130, 0, 14),
+            }, card)
+            text({
+                Text = "now", FontFace = F.Med, TextSize = 11, TextColor3 = C.Dim, AnchorPoint = Vector2.new(1, 0), Position = UDim2.new(1, -16, 0, 11),
+                Size = UDim2.fromOffset(50, 14), TextXAlignment = Enum.TextXAlignment.Right,
+            }, card)
+            text({
+                Text = tostring(ncfg.Title or Lib.Name), FontFace = F.Bold, TextSize = 15, TextColor3 = Color3.new(1, 1, 1),
+                Position = UDim2.fromOffset(66, 27), Size = UDim2.new(1, -82, 0, 19), TextTruncate = Enum.TextTruncate.AtEnd,
+            }, card)
+            text({
+                Text = tostring(ncfg.Content or ""), FontFace = F.Med, TextSize = 13, TextColor3 = Color3.fromRGB(175, 175, 185),
+                Position = UDim2.fromOffset(66, 47), Size = UDim2.new(1, -82, 0, 17), TextTruncate = Enum.TextTruncate.AtEnd,
+            }, card)
+            local bar = inst("Frame", { BackgroundColor3 = col, BorderSizePixel = 0, AnchorPoint = Vector2.new(0, 1), Position = UDim2.new(0, 18, 1, -1), Size = UDim2.new(1, -36, 0, 2) }, card)
             round(bar)
-            holder.Parent = toasts
+            local hit = inst("TextButton", { Text = "", AutoButtonColor = false, BackgroundTransparency = 1, Size = UDim2.fromScale(1, 1), ZIndex = 5 }, card)
+            local gone = false
+            local function dismiss()
+                if gone then return end
+                gone = true
+                if Lib.FX then
+                    ease(card, 0.32, { Position = UDim2.fromOffset(0, -(CH + 24)), GroupTransparency = 1 }, Enum.EasingStyle.Quart, Enum.EasingDirection.In)
+                    ease(wrapB, 0.3, { Size = UDim2.new(1, 0, 0, 0) }, Enum.EasingStyle.Quart, Enum.EasingDirection.InOut)
+                    task.delay(0.34, function() pcall(function() wrapB:Destroy() end) end)
+                else
+                    pcall(function() wrapB:Destroy() end)
+                end
+            end
+            hit.MouseButton1Click:Connect(dismiss)
+            hit.MouseEnter:Connect(function() tw(cs, 0.15, { Color = col, Transparency = 0.4 }) end)
+            hit.MouseLeave:Connect(function() tw(cs, 0.2, { Color = C.Line, Transparency = 0.85 }) end)
+            if Lib.FX then
+                ease(wrapB, 0.35, { Size = UDim2.new(1, 0, 0, CH) }, Enum.EasingStyle.Quint)
+                ease(card, 0.55, { Position = UDim2.fromOffset(0, 0), GroupTransparency = 0 }, Enum.EasingStyle.Back)
+                local ts = inst("UIScale", { Scale = 0.4 }, tile)
+                task.delay(0.12, function() ease(ts, 0.45, { Scale = 1 }, Enum.EasingStyle.Back) end)
+            end
             local all = {}
-            for _, ch in ipairs(toasts:GetChildren()) do
+            for _, ch in ipairs(banners:GetChildren()) do
                 if ch:IsA("Frame") then all[#all + 1] = ch end
             end
-            table.sort(all, function(x, y) return x.LayoutOrder < y.LayoutOrder end)
-            for i = 1, #all - 4 do all[i]:Destroy() end
+            table.sort(all, function(x, z) return x.LayoutOrder < z.LayoutOrder end)
+            for i = 5, #all do pcall(function() all[i]:Destroy() end) end
             local dur = tonumber(ncfg.Duration) or 4
-            if Lib.FX then ease(f, 0.45, { Position = UDim2.fromOffset(0, 0) }, Enum.EasingStyle.Back) end
-            TweenService:Create(bar, TweenInfo.new(dur, Enum.EasingStyle.Linear), { Size = UDim2.fromScale(0, 1) }):Play()
-            task.delay(dur, function()
-                if Lib.FX and holder.Parent then
-                    ease(f, 0.28, { Position = UDim2.fromOffset(340, 0) }, Enum.EasingStyle.Quad, Enum.EasingDirection.In)
-                    task.wait(0.3)
-                end
-                pcall(function() holder:Destroy() end)
-            end)
+            TweenService:Create(bar, TweenInfo.new(dur, Enum.EasingStyle.Linear), { Size = UDim2.new(0, 0, 0, 2) }):Play()
+            task.delay(dur, dismiss)
         end)
     end
 
