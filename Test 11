@@ -297,6 +297,57 @@ local Library = (function()
     local overlay = inst("Frame", { Name = "Overlay", BackgroundTransparency = 1, Size = UDim2.fromScale(1, 1), ZIndex = 50, Visible = false }, gui)
     local catcher = inst("TextButton", { Text = "", AutoButtonColor = false, BackgroundTransparency = 1, Size = UDim2.fromScale(1, 1), ZIndex = 50 }, overlay)
     local Pop = {}
+    local tipF = inst("Frame", {
+        Name = "Tooltip", BackgroundColor3 = Color3.fromRGB(20, 20, 24), BorderSizePixel = 0, AutomaticSize = Enum.AutomaticSize.XY,
+        Size = UDim2.fromOffset(0, 0), Visible = false, ZIndex = 60,
+    }, gui)
+    round(tipF, 10)
+    local tipLine = stroke(tipF, 0.4)
+    pad(tipF, 12, 12, 8, 9)
+    local tipText = text({
+        Text = "", FontFace = F.Med, TextSize = 13, TextWrapped = true, AutomaticSize = Enum.AutomaticSize.XY,
+        Size = UDim2.fromOffset(0, 0), ZIndex = 61,
+    }, tipF)
+    inst("UISizeConstraint", { MaxSize = Vector2.new(260, 400) }, tipText)
+    local tipScale = inst("UIScale", {}, tipF)
+    local Tip = {}
+    local function hideTip()
+        Tip.owner = nil
+        Tip.tok = (Tip.tok or 0) + 1
+        tipF.Visible = false
+    end
+    local function showTip(anchor, str)
+        if str == nil or str == "" then return end
+        Tip.owner = anchor
+        Tip.at = os.clock()
+        Tip.tok = (Tip.tok or 0) + 1
+        local my = Tip.tok
+        tipText.Text = str
+        tipLine.Color = accent()
+        local sc = Lib._fit and Lib._fit.Scale or 1
+        tipScale.Scale = sc
+        tipF.Position = UDim2.fromOffset(-1000, -1000)
+        tipF.Visible = true
+        task.defer(function()
+            if Tip.tok ~= my then return end
+            local vp = viewport()
+            local ap, as = anchor.AbsolutePosition, anchor.AbsoluteSize
+            local sz = tipF.AbsoluteSize
+            local x = math.clamp(ap.X + as.X / 2 - sz.X / 2, 8, math.max(8, vp.X - sz.X - 8))
+            local y = ap.Y - sz.Y - 8
+            if y < 8 then y = ap.Y + as.Y + 8 end
+            tipF.Position = UDim2.fromOffset(x, y)
+            if Lib.FX then
+                tipScale.Scale = sc * 0.85
+                ease(tipScale, 0.22, { Scale = sc }, Enum.EasingStyle.Back)
+            end
+        end)
+        task.delay(5, function() if Tip.tok == my then hideTip() end end)
+    end
+    Lib._hideTip = hideTip
+    connect(UIS.InputBegan, function(i)
+        if isPress(i) and tipF.Visible and os.clock() - (Tip.at or 0) > 0.25 then hideTip() end
+    end)
     local function closePopup()
         local f, cb = Pop.frame, Pop.onClose
         Pop.frame, Pop.onClose = nil, nil
@@ -511,7 +562,7 @@ local Library = (function()
         return card
     end
 
-    local function newRow(card, title, desc, ctlW)
+    local function newRow(card, title, desc, ctlW, tip)
         card.n = card.n + 1
         local r = inst("Frame", {
             Name = "Row", BackgroundTransparency = 1, AutomaticSize = Enum.AutomaticSize.Y,
@@ -552,8 +603,52 @@ local Library = (function()
         function row.setDesc(s)
             local str = tostring(s or "")
             d.Text = str
-            d.Visible = str ~= ""
+            if row.tip then
+                row.tipText = str
+                if row.qb then row.qb.Visible = str ~= "" end
+            else
+                d.Visible = str ~= ""
+            end
             row.update()
+        end
+        if tip then
+            row.tip = true
+            row.tipText = tostring(desc or "")
+            d.Visible = false
+            local qb = inst("TextButton", {
+                Name = "Help", Text = "?", FontFace = F.Bold, TextSize = 11, TextColor3 = C.Sub, AutoButtonColor = false,
+                BackgroundColor3 = C.Raise, BorderSizePixel = 0, Size = UDim2.fromOffset(17, 17), ZIndex = 3,
+                Position = UDim2.fromOffset(textWidth(t.Text, 15) + 6, 1), Visible = row.tipText ~= "",
+            }, t)
+            round(qb)
+            local ql = stroke(qb, 0.75)
+            row.qb = qb
+            task.spawn(function()
+                local ok, b = pcall(function()
+                    local prm = Instance.new("GetTextBoundsParams")
+                    prm.Text = t.Text
+                    prm.Font = F.Semi
+                    prm.Size = 15
+                    prm.Width = 2000
+                    return TextService:GetTextBoundsAsync(prm)
+                end)
+                if ok and b then qb.Position = UDim2.fromOffset(math.floor(b.X) + 6, 1) end
+            end)
+            local touch = UIS.TouchEnabled and not UIS.MouseEnabled
+            connect(qb.MouseEnter, function()
+                tw(qb, 0.12, { BackgroundColor3 = accent(), TextColor3 = Color3.new(1, 1, 1) })
+                tw(ql, 0.12, { Color = accent(), Transparency = 0 })
+                if not touch then showTip(qb, row.tipText) end
+            end)
+            connect(qb.MouseLeave, function()
+                tw(qb, 0.15, { BackgroundColor3 = C.Raise, TextColor3 = C.Sub })
+                tw(ql, 0.15, { Color = C.Line, Transparency = 0.75 })
+                if not touch and Tip.owner == qb then hideTip() end
+            end)
+            connect(qb.MouseButton1Click, function()
+                if Tip.owner == qb and tipF.Visible and not touch then return end
+                showTip(qb, row.tipText)
+            end)
         end
         function row.below(h)
             bpad.PaddingBottom = UDim.new(0, 4)
@@ -594,6 +689,7 @@ local Library = (function()
         if Lib._folding then return end
         if gui.Enabled then
             closePopup()
+            hideTip()
             if Lib.FX and Lib._fold then
                 Lib._fold(false, function()
                     gui.Enabled = false
@@ -611,7 +707,7 @@ local Library = (function()
 
     Lib.Folder = "ZeroX UI"
     Lib.Name = "ZeroX UI"
-    Lib.Version = "2.3"
+    Lib.Version = "2.4"
     Lib.AutoSave = false
     local function fsOk() return writefile and readfile and isfile end
     function Lib:EnsureFolder(path)
@@ -973,6 +1069,43 @@ local Library = (function()
             ind.Position = UDim2.new(0, W.ix, 0.5, 0)
             ind.Size = UDim2.fromOffset(math.max(W.iw, 0), 38)
         end
+        function W.fitTabs()
+            local s2 = math.max(fit.Scale, 0.01)
+            local avail = tabsBar.AbsoluteSize.X / s2 - 6
+            local pills, other, natural = {}, 0, 0
+            for _, ch in ipairs(tabsRow:GetChildren()) do
+                if ch:IsA("TextButton") and ch.Name == "Tab" then
+                    pills[#pills + 1] = ch
+                    local lb = ch:FindFirstChildWhichIsA("TextLabel")
+                    natural = natural + 13 + 17 + 7 + (lb and textWidth(lb.Text, 15) or 60) + 15
+                elseif ch:IsA("GuiObject") then
+                    other = other + ch.Size.X.Offset
+                end
+            end
+            local n = #pills
+            if n == 0 then return end
+            local items = n + (#tabsRow:GetChildren() - n - 1)
+            local gaps = math.max(items - 1, 0) * 4
+            local fill = natural + other + gaps <= avail
+            for _, pl in ipairs(pills) do
+                if fill then
+                    pl.AutomaticSize = Enum.AutomaticSize.None
+                    pl.Size = UDim2.fromOffset(math.floor((avail - other - gaps) / n), 38)
+                else
+                    pl.AutomaticSize = Enum.AutomaticSize.X
+                    pl.Size = UDim2.fromOffset(0, 38)
+                end
+            end
+        end
+        function W.queueFit()
+            if W.fitQ then return end
+            W.fitQ = true
+            task.defer(function()
+                W.fitQ = false
+                pcall(W.fitTabs)
+            end)
+        end
+        connect(tabsBar:GetPropertyChangedSignal("AbsoluteSize"), W.queueFit)
         connect(tabsRow:GetPropertyChangedSignal("AbsoluteSize"), function()
             if W.active then W.moveIndicator(W.active, false) end
         end)
@@ -1103,7 +1236,7 @@ local Library = (function()
 
         local function colCount()
             local w = body.Size.X.Offset - 36
-            if w >= 880 then return 3 elseif w >= 560 then return 2 end
+            if w >= 560 then return 2 end
             return 1
         end
         local function relayout(tab)
@@ -1232,6 +1365,7 @@ local Library = (function()
                 titleL.TextColor3 = C.Text
             end
             closePopup()
+            hideTip()
             applySearch(tab)
             task.defer(function()
                 local s = math.max(fit.Scale, 0.01)
@@ -1380,8 +1514,9 @@ local Library = (function()
             }, tabsRow)
             round(pill, 10)
             tab.pill = pill
+            if W.queueFit then W.queueFit() end
             pad(pill, 13, 15, 0, 0)
-            list(pill, Enum.FillDirection.Horizontal, 7, nil, Enum.VerticalAlignment.Center)
+            list(pill, Enum.FillDirection.Horizontal, 7, Enum.HorizontalAlignment.Center, Enum.VerticalAlignment.Center)
             local pic = icon(tcfg.Icon, 17, pill, C.Sub)
             pic.LayoutOrder = 1
             local plb = text({
@@ -1443,7 +1578,7 @@ local Library = (function()
 
             function tab:AddButton(bcfg)
                 local label = bcfg.ButtonText or "Run"
-                local r = newRow(cur(), bcfg.Title, bcfg.Description, buttonWidth(label))
+                local r = newRow(cur(), bcfg.Title, bcfg.Description, buttonWidth(label), true)
                 makeButton(r.right, label, function()
                     if bcfg.Callback then task.spawn(safe, bcfg.Callback) end
                 end)
@@ -1451,7 +1586,7 @@ local Library = (function()
             end
 
             function tab:AddToggle(id, ocfg)
-                local r = newRow(cur(), ocfg.Title, ocfg.Description, 56)
+                local r = newRow(cur(), ocfg.Title, ocfg.Description, 56, true)
                 local opt = makeOption(id, "Toggle", ocfg)
                 opt.Value = ocfg.Default and true or false
                 if id then table.insert(Lib._toggles, { id = id, opt = opt }) end
@@ -1475,7 +1610,7 @@ local Library = (function()
                 local title = tostring(ocfg.Title or "")
                 local name, unit = title:match("^(.-)%s*%((.-)%)%s*$")
                 if not name or name == "" then name, unit = title, nil end
-                local r = newRow(cur(), name, ocfg.Description, 130)
+                local r = newRow(cur(), name, ocfg.Description, 130, true)
                 local opt = makeOption(id, "Slider", ocfg)
                 local function rnd(v)
                     local m = 10 ^ dec
@@ -1641,7 +1776,7 @@ local Library = (function()
             end
 
             function tab:AddInput(id, ocfg)
-                local r = newRow(cur(), ocfg.Title, ocfg.Description, 160)
+                local r = newRow(cur(), ocfg.Title, ocfg.Description, 160, true)
                 local opt = makeOption(id, "Input", ocfg)
                 local function norm(v)
                     if ocfg.Numeric then
@@ -1690,7 +1825,7 @@ local Library = (function()
                 local opt = makeOption(id, "Dropdown", ocfg)
                 local multi = ocfg.Multi and true or false
                 opt.Multi, opt.Values = multi, ocfg.Values or {}
-                local r = newRow(cur(), ocfg.Title, ocfg.Description, 170)
+                local r = newRow(cur(), ocfg.Title, ocfg.Description, 170, true)
                 local btn = inst("TextButton", {
                     Name = "Dropdown", Text = "", AutoButtonColor = false, BackgroundColor3 = C.Raise, BackgroundTransparency = 0,
                     BorderSizePixel = 0, Size = UDim2.fromOffset(170, 40),
@@ -1768,11 +1903,18 @@ local Library = (function()
                     local vals = opt.Values
                     local n = #vals
                     local itemH = 40
-                    local filter = n > 8
-                    local h = math.min(math.max(n, 1), 7) * (itemH + 2) + 12 + (filter and 48 or 0)
+                    local filter = n > 6
+                    local headH = 50
+                    local h = headH + (filter and 46 or 0) + math.min(math.max(n, 1), 6) * (itemH + 3) + 10
                     local s = math.max(fit.Scale, 0.01)
-                    local w = math.max(btn.AbsoluteSize.X / s, 230)
+                    local w = math.max(btn.AbsoluteSize.X / s, 240)
                     local f = openPopup(btn, w, h)
+                    local fullH = f.Size.Y.Offset
+                    f.ClipsDescendants = true
+                    if Lib.FX then
+                        f.Size = UDim2.fromOffset(f.Size.X.Offset, 0)
+                        ease(f, 0.35, { Size = UDim2.fromOffset(f.Size.X.Offset, fullH) })
+                    end
                     menuOpen = true
                     W.ddOpen = btn
                     ease(chev, 0.3, { Rotation = 180 }, Enum.EasingStyle.Back)
@@ -1790,24 +1932,89 @@ local Library = (function()
                             task.defer(function() opt:SetValues(pv) end)
                         end
                     end
+                    local head = inst("Frame", { BackgroundTransparency = 1, Size = UDim2.new(1, 0, 0, headH), ZIndex = 52 }, f)
+                    local hbar = inst("Frame", { BackgroundColor3 = accent(), BorderSizePixel = 0, Position = UDim2.fromOffset(14, 15), Size = UDim2.fromOffset(3, 20), ZIndex = 52 }, head)
+                    round(hbar)
+                    text({
+                        Text = tostring(ocfg.Title or "Select"), FontFace = F.Bold, TextSize = 14, Position = UDim2.fromOffset(25, 9),
+                        Size = UDim2.new(1, -110, 0, 18), TextTruncate = Enum.TextTruncate.AtEnd, ZIndex = 52,
+                    }, head)
+                    local cnt = text({
+                        Text = "", FontFace = F.Med, TextSize = 12, TextColor3 = C.Sub, Position = UDim2.fromOffset(25, 27),
+                        Size = UDim2.new(1, -110, 0, 15), ZIndex = 52,
+                    }, head)
+                    inst("Frame", { BackgroundColor3 = C.Line, BackgroundTransparency = 0.92, BorderSizePixel = 0, Position = UDim2.new(0, 10, 1, -1), Size = UDim2.new(1, -20, 0, 1), ZIndex = 52 }, head)
+                    local items = {}
+                    local paintItems
+                    local function count()
+                        if multi then
+                            local k = 0
+                            for _, x in ipairs(opt.Values) do if opt.Value[x] then k = k + 1 end end
+                            cnt.Text = k .. " of " .. n .. " selected"
+                        else
+                            cnt.Text = n .. (n == 1 and " option" or " options")
+                        end
+                    end
+                    if multi then
+                        local hb = inst("Frame", {
+                            BackgroundTransparency = 1, AnchorPoint = Vector2.new(1, 0.5), Position = UDim2.new(1, -10, 0.5, 0),
+                            AutomaticSize = Enum.AutomaticSize.X, Size = UDim2.fromOffset(0, 26), ZIndex = 52,
+                        }, head)
+                        list(hb, Enum.FillDirection.Horizontal, 6, nil, Enum.VerticalAlignment.Center)
+                        for k, lab in ipairs({ "All", "Clear" }) do
+                            local qb = inst("TextButton", {
+                                Text = lab, FontFace = F.Semi, TextSize = 12, TextColor3 = C.Text, AutoButtonColor = false, BackgroundColor3 = C.Raise,
+                                BorderSizePixel = 0, AutomaticSize = Enum.AutomaticSize.X, Size = UDim2.fromOffset(0, 26), LayoutOrder = k, ZIndex = 52,
+                            }, hb)
+                            round(qb, 8)
+                            pad(qb, 10, 10, 0, 0)
+                            qb.MouseButton1Click:Connect(function()
+                                for _, x in ipairs(opt.Values) do opt.Value[x] = (k == 1) or nil end
+                                refresh()
+                                paintItems(true)
+                                count()
+                                opt:_fire()
+                            end)
+                        end
+                    end
                     local q
                     if filter then
                         q = inst("TextBox", {
-                            BackgroundColor3 = C.Raise, BackgroundTransparency = 0.3, BorderSizePixel = 0, Position = UDim2.fromOffset(8, 8),
-                            Size = UDim2.new(1, -16, 0, 38), FontFace = F.Med, TextSize = 14, TextColor3 = C.Text, PlaceholderText = "Search",
-                            PlaceholderColor3 = C.Sub, Text = "", ClearTextOnFocus = false, TextXAlignment = Enum.TextXAlignment.Left,
+                            BackgroundColor3 = C.Raise, BorderSizePixel = 0, Position = UDim2.fromOffset(10, headH + 6),
+                            Size = UDim2.new(1, -20, 0, 34), FontFace = F.Med, TextSize = 13, TextColor3 = C.Text, PlaceholderText = "Filter",
+                            PlaceholderColor3 = C.Sub, Text = "", ClearTextOnFocus = false, TextXAlignment = Enum.TextXAlignment.Left, ZIndex = 52,
                         }, f)
-                        round(q, 10)
-                        pad(q, 12, 12, 0, 0)
+                        round(q, 9)
+                        pad(q, 30, 10, 0, 0)
+                        local qi = icon("search", 13, q, C.Sub)
+                        qi.AnchorPoint = Vector2.new(0, 0.5)
+                        qi.Position = UDim2.new(0, -20, 0.5, 0)
+                        qi.ZIndex = 52
                     end
-                    local sc = inst("ScrollingFrame", {
-                        BackgroundTransparency = 1, BorderSizePixel = 0, Position = UDim2.fromOffset(6, filter and 52 or 6),
-                        Size = UDim2.new(1, -12, 1, filter and -58 or -12), CanvasSize = UDim2.new(), AutomaticCanvasSize = Enum.AutomaticSize.Y,
-                        ScrollingDirection = Enum.ScrollingDirection.Y, ScrollBarThickness = 3, ScrollBarImageColor3 = C.Dim,
+                    local top0 = headH + (filter and 46 or 0) + 4
+                    local hl = inst("Frame", {
+                        BackgroundColor3 = C.Hover, BorderSizePixel = 0, Size = UDim2.fromOffset(0, itemH), Visible = false, ZIndex = 51,
                     }, f)
-                    list(sc, nil, 2)
-                    local items = {}
-                    local function paintItems(anim)
+                    round(hl, 10)
+                    local sc = inst("ScrollingFrame", {
+                        BackgroundTransparency = 1, BorderSizePixel = 0, Position = UDim2.fromOffset(6, top0),
+                        Size = UDim2.new(1, -12, 1, -(top0 + 6)), CanvasSize = UDim2.new(), AutomaticCanvasSize = Enum.AutomaticSize.Y,
+                        ScrollingDirection = Enum.ScrollingDirection.Y, ScrollBarThickness = 3, ScrollBarImageColor3 = C.Dim, ZIndex = 52,
+                    }, f)
+                    list(sc, nil, 3)
+                    local function moveHl(b)
+                        local ps = math.max(f.AbsoluteSize.X / math.max(f.Size.X.Offset, 1), 0.01)
+                        local rel = (b.AbsolutePosition - f.AbsolutePosition) / ps
+                        local goal = { Position = UDim2.fromOffset(rel.X, rel.Y), Size = UDim2.fromOffset(b.AbsoluteSize.X / ps, itemH) }
+                        if not hl.Visible or not Lib.FX then
+                            hl.Position, hl.Size = goal.Position, goal.Size
+                            hl.Visible = true
+                        else
+                            ease(hl, 0.2, goal)
+                        end
+                    end
+                    sc.MouseLeave:Connect(function() hl.Visible = false end)
+                    paintItems = function(anim)
                         for _, it in ipairs(items) do
                             local on
                             if multi then on = opt.Value[it.v] and true or false else on = opt.Value == it.v end
@@ -1816,7 +2023,8 @@ local Library = (function()
                             tw(it.box, t, { BackgroundColor3 = on and accent() or C.Raise })
                             tw(it.boxLine, t, { Color = on and accent() or C.Line, Transparency = on and 0 or 0.8 })
                             tw(it.lbl, t, { TextColor3 = on and C.Text or C.Sub })
-                            tw(it.b, t, { BackgroundTransparency = on and 0.82 or 1 })
+                            tw(it.b, t, { BackgroundTransparency = on and 0.7 or 1 })
+                            it.bar.Visible = on
                             it.check.Visible = on
                             if on and anim then
                                 it.check.Size = UDim2.fromOffset(0, 0)
@@ -1829,62 +2037,82 @@ local Library = (function()
                     for i, v in ipairs(vals) do
                         local b = inst("TextButton", {
                             Text = "", AutoButtonColor = false, BackgroundColor3 = accent(), BackgroundTransparency = 1, BorderSizePixel = 0,
-                            Size = UDim2.new(1, -4, 0, itemH), LayoutOrder = i,
+                            Size = UDim2.new(1, -4, 0, itemH), LayoutOrder = i, ZIndex = 52,
                         }, sc)
                         round(b, 10)
+                        inst("UIGradient", { Transparency = NumberSequence.new(0, 0.95) }, b)
+                        local bar = inst("Frame", {
+                            BackgroundColor3 = accent(), BorderSizePixel = 0, AnchorPoint = Vector2.new(0, 0.5), Position = UDim2.new(0, 0, 0.5, 0),
+                            Size = UDim2.fromOffset(3, 22), Visible = false, ZIndex = 53,
+                        }, b)
+                        round(bar)
                         local box = inst("Frame", {
-                            BackgroundColor3 = C.Raise, BorderSizePixel = 0, AnchorPoint = Vector2.new(0, 0.5), Position = UDim2.new(0, 12, 0.5, 0),
-                            Size = UDim2.fromOffset(18, 18),
+                            BackgroundColor3 = C.Raise, BorderSizePixel = 0, AnchorPoint = Vector2.new(0, 0.5), Position = UDim2.new(0, 14, 0.5, 0),
+                            Size = UDim2.fromOffset(18, 18), ZIndex = 53,
                         }, b)
                         round(box, multi and 5 or 9)
                         local boxLine = stroke(box, 0.8)
                         local ck = icon("check", 11, box, Color3.new(1, 1, 1))
                         ck.AnchorPoint = Vector2.new(0.5, 0.5)
                         ck.Position = UDim2.fromScale(0.5, 0.5)
+                        ck.ZIndex = 54
                         local l = text({
-                            Text = tostring(v), FontFace = F.Semi, TextSize = 14, Position = UDim2.fromOffset(40, 0), Size = UDim2.new(1, -52, 1, 0),
-                            TextTruncate = Enum.TextTruncate.AtEnd,
+                            Text = tostring(v), FontFace = F.Semi, TextSize = 14, Position = UDim2.fromOffset(42, 0), Size = UDim2.new(1, -80, 1, 0),
+                            TextTruncate = Enum.TextTruncate.AtEnd, ZIndex = 53,
                         }, b)
-                        local it = { v = v, b = b, lbl = l, check = ck, box = box, boxLine = boxLine, key = string.lower(tostring(v)) }
+                        local num = text({
+                            Text = string.format("%02d", i), FontFace = F.Mono, TextSize = 11, TextColor3 = C.Dim, AnchorPoint = Vector2.new(1, 0.5),
+                            Position = UDim2.new(1, -12, 0.5, 0), Size = UDim2.fromOffset(30, 16), TextXAlignment = Enum.TextXAlignment.Right, ZIndex = 53,
+                        }, b)
+                        local it = { v = v, b = b, lbl = l, check = ck, box = box, boxLine = boxLine, bar = bar, key = string.lower(tostring(v)) }
                         items[#items + 1] = it
                         if Lib.FX and i <= 12 then
                             l.TextTransparency = 1
-                            l.Position = UDim2.fromOffset(56, 0)
+                            num.TextTransparency = 1
+                            l.Position = UDim2.fromOffset(60, 0)
                             box.Size = UDim2.fromOffset(0, 0)
-                            task.delay((i - 1) * 0.03, function()
-                                ease(l, 0.35, { TextTransparency = 0, Position = UDim2.fromOffset(40, 0) })
-                                ease(box, 0.35, { Size = UDim2.fromOffset(18, 18) }, Enum.EasingStyle.Back)
+                            task.delay(0.08 + (i - 1) * 0.035, function()
+                                ease(l, 0.4, { TextTransparency = 0, Position = UDim2.fromOffset(42, 0) })
+                                ease(num, 0.4, { TextTransparency = 0 })
+                                ease(box, 0.4, { Size = UDim2.fromOffset(18, 18) }, Enum.EasingStyle.Back)
                             end)
                         end
                         b.MouseEnter:Connect(function()
-                            if not it.on then tw(b, 0.12, { BackgroundTransparency = 0.9 }) end
-                            tw(l, 0.15, { Position = UDim2.fromOffset(44, 0) })
+                            moveHl(b)
+                            tw(l, 0.15, { Position = UDim2.fromOffset(46, 0) })
+                            tw(num, 0.15, { TextColor3 = accent() })
                         end)
                         b.MouseLeave:Connect(function()
-                            if not it.on then tw(b, 0.15, { BackgroundTransparency = 1 }) end
-                            tw(l, 0.15, { Position = UDim2.fromOffset(40, 0) })
+                            tw(l, 0.15, { Position = UDim2.fromOffset(42, 0) })
+                            tw(num, 0.15, { TextColor3 = C.Dim })
                         end)
                         b.MouseButton1Click:Connect(function()
                             if multi then
                                 opt.Value[v] = (not opt.Value[v]) or nil
                                 refresh()
                                 paintItems(true)
+                                count()
                                 opt:_fire()
                             else
-                                closePopup()
-                                if v == opt.Value then return end
-                                opt.Value = v
-                                refresh()
-                                opt:_fire()
+                                paintItems(true)
+                                if v ~= opt.Value then
+                                    opt.Value = v
+                                    refresh()
+                                    paintItems(true)
+                                    opt:_fire()
+                                end
+                                task.delay(0.12, closePopup)
                             end
                         end)
                     end
                     if q then
                         q:GetPropertyChangedSignal("Text"):Connect(function()
                             local s2 = string.lower(q.Text)
+                            hl.Visible = false
                             for _, it in ipairs(items) do it.b.Visible = s2 == "" or it.key:find(s2, 1, true) ~= nil end
                         end)
                     end
+                    count()
                     paintItems()
                 end
                 connect(btn.MouseButton1Click, function()
@@ -1969,7 +2197,7 @@ local Library = (function()
             end
 
             function tab:AddKeybind(kcfg)
-                local r = newRow(cur(), kcfg.Title, kcfg.Description, 150)
+                local r = newRow(cur(), kcfg.Title, kcfg.Description, 150, true)
                 Lib.ToggleKey = kcfg.Default or Lib.ToggleKey
                 local b
                 b = makeButton(r.right, Lib.ToggleKey.Name, function()
