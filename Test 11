@@ -694,10 +694,11 @@ local Library = (function()
         connect(f.MouseLeave, function() tw(cst, 0.25, { Color = C.Line, Transparency = 0.92 }) end)
         if not (UIS.TouchEnabled and not UIS.MouseEnabled) then
             f.ClipsDescendants = true
+            local spotAnchor = inst("Frame", { Name = "SpotAnchor", BackgroundTransparency = 1, Size = UDim2.new(1, 0, 0, 0), LayoutOrder = -100 }, f)
             local spot = inst("Frame", {
                 Name = "Spot", BackgroundColor3 = accent(), BackgroundTransparency = 1, BorderSizePixel = 0, AnchorPoint = Vector2.new(0.5, 0.5),
                 Size = UDim2.fromOffset(260, 260), ZIndex = 0,
-            }, f)
+            }, spotAnchor)
             round(spot)
             inst("UIGradient", { Transparency = NumberSequence.new({ NumberSequenceKeypoint.new(0, 1), NumberSequenceKeypoint.new(0.5, 0.35), NumberSequenceKeypoint.new(1, 1) }) }, spot)
             onAccent(function(c) spot.BackgroundColor3 = c end)
@@ -705,7 +706,7 @@ local Library = (function()
                 if not Lib.FX then return end
                 local m = UIS:GetMouseLocation()
                 local org = overlay.AbsolutePosition
-                local rel = m - (f.AbsolutePosition - org)
+                local rel = m - (spotAnchor.AbsolutePosition - org)
                 local sc = math.max(Lib._fit and Lib._fit.Scale or 1, 0.01)
                 spot.Position = UDim2.fromOffset(rel.X / sc, rel.Y / sc)
                 if spot.BackgroundTransparency > 0.95 then tw(spot, 0.25, { BackgroundTransparency = 0.9 }) end
@@ -908,7 +909,7 @@ local Library = (function()
 
     Lib.Folder = "ZeroX UI"
     Lib.Name = "ZeroX UI"
-    Lib.Version = "4.3"
+    Lib.Version = "4.4"
     Lib.AutoSave = false
     local function fsOk() return writefile and readfile and isfile end
     function Lib:EnsureFolder(path)
@@ -4310,6 +4311,7 @@ local Library = (function()
         if cfg.Welcome ~= false then
             body.Visible = false
             Lib.Changelog = Lib.Changelog or {
+                "Fixed the card layout from v4.3",
                 "7 themes with live color morph: Crimson, Midnight, Neon Cyber, Gold Royal, Sakura, Toxic, Mono",
                 "Aurora background and a light that follows your mouse on cards",
                 "Rolling numbers on the live stat tiles",
