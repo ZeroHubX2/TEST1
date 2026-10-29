@@ -909,7 +909,7 @@ local Library = (function()
 
     Lib.Folder = "ZeroX UI"
     Lib.Name = "ZeroX UI"
-    Lib.Version = "4.6"
+    Lib.Version = "4.7"
     Lib.AutoSave = false
     local function fsOk() return writefile and readfile and isfile end
     function Lib:EnsureFolder(path)
@@ -1002,6 +1002,8 @@ local Library = (function()
     function Lib:CreateWindow(cfg)
         local RunService = game:GetService("RunService")
         if cfg.ConfigFolder then Lib.Folder = cfg.ConfigFolder end
+        if cfg.Wordmark == nil then cfg.Wordmark = "rbxassetid://105303733304739" end
+        if cfg.Wordmark == false then cfg.Wordmark = nil end
         if cfg.Title then Lib.Name = tostring(cfg.Title) end
         if cfg.Logo then LOGO_ID = cfg.Logo end
         Lib.ToggleKey = cfg.ToggleKey or Enum.KeyCode.RightControl
