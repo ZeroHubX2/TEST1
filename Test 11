@@ -794,7 +794,7 @@ local Library = (function()
 
     Lib.Folder = "ZeroX UI"
     Lib.Name = "ZeroX UI"
-    Lib.Version = "3.2"
+    Lib.Version = "3.3"
     Lib.AutoSave = false
     local function fsOk() return writefile and readfile and isfile end
     function Lib:EnsureFolder(path)
@@ -2481,7 +2481,7 @@ local Library = (function()
 
             function tab:AddGameCard(gcfg)
                 gcfg = gcfg or {}
-                local card = newCard(tab, gcfg.Title or "Live Session", "gamepad")
+                local card = newCard(tab, gcfg.Title or "Map", "gamepad")
                 tab.card = card
                 card.n = card.n + 1
                 local Plr = game:GetService("Players")
@@ -2520,45 +2520,10 @@ local Library = (function()
                     BackgroundColor3 = accent(), BorderSizePixel = 0, AnchorPoint = Vector2.new(0, 1), Position = UDim2.fromScale(0, 0), Size = UDim2.new(1, 0, 0, 22), ZIndex = 3,
                 }, scan)
                 inst("UIGradient", { Rotation = 90, Transparency = NumberSequence.new(1, 0.75) }, glowScan)
-                local bracketBox = inst("Frame", {
-                    BackgroundTransparency = 1, AnchorPoint = Vector2.new(1, 0.5), Position = UDim2.new(1, -12, 0.5, 0), Size = UDim2.new(0.5, 0, 1, -24), ZIndex = 4,
-                }, banner)
-                local brackets = {}
-                for i = 1, 4 do
-                    local right, bottom = (i == 2 or i == 4), (i >= 3)
-                    local holder = inst("Frame", {
-                        BackgroundTransparency = 1, AnchorPoint = Vector2.new(right and 1 or 0, bottom and 1 or 0),
-                        Position = UDim2.fromScale(right and 1 or 0, bottom and 1 or 0), Size = UDim2.fromOffset(16, 16), ZIndex = 4,
-                    }, bracketBox)
-                    local hbar = inst("Frame", {
-                        BackgroundColor3 = accent(), BorderSizePixel = 0, AnchorPoint = Vector2.new(right and 1 or 0, bottom and 1 or 0),
-                        Position = UDim2.fromScale(right and 1 or 0, bottom and 1 or 0), Size = UDim2.new(1, 0, 0, 2), ZIndex = 4,
-                    }, holder)
-                    local vbar = inst("Frame", {
-                        BackgroundColor3 = accent(), BorderSizePixel = 0, AnchorPoint = Vector2.new(right and 1 or 0, bottom and 1 or 0),
-                        Position = UDim2.fromScale(right and 1 or 0, bottom and 1 or 0), Size = UDim2.new(0, 2, 1, 0), ZIndex = 4,
-                    }, holder)
-                    brackets[i] = { holder = holder, h = hbar, v = vbar, right = right, bottom = bottom }
-                end
-                local live = inst("Frame", {
-                    BackgroundColor3 = Color3.new(0, 0, 0), BackgroundTransparency = 0.35, BorderSizePixel = 0, AnchorPoint = Vector2.new(1, 0),
-                    Position = UDim2.new(1, -36, 0, 18), AutomaticSize = Enum.AutomaticSize.X, Size = UDim2.fromOffset(0, 20), ZIndex = 5,
-                }, banner)
-                round(live)
-                pad(live, 7, 9, 0, 0)
-                list(live, Enum.FillDirection.Horizontal, 5, nil, Enum.VerticalAlignment.Center)
-                local liveDot = inst("Frame", { BackgroundColor3 = accent(), BorderSizePixel = 0, Size = UDim2.fromOffset(6, 6), LayoutOrder = 1, ZIndex = 5 }, live)
-                round(liveDot)
-                text({ Text = "LIVE", FontFace = F.Bold, TextSize = 10, TextColor3 = Color3.new(1, 1, 1), AutomaticSize = Enum.AutomaticSize.X, Size = UDim2.fromOffset(0, 20), LayoutOrder = 2, ZIndex = 5 }, live)
                 onAccent(function(c)
                     scan.BackgroundColor3 = c
                     glowScan.BackgroundColor3 = c
                     tint.BackgroundColor3 = c
-                    liveDot.BackgroundColor3 = c
-                    for _, br in ipairs(brackets) do
-                        br.h.BackgroundColor3 = c
-                        br.v.BackgroundColor3 = c
-                    end
                 end)
 
                 local info = inst("Frame", { BackgroundTransparency = 1, Position = UDim2.fromOffset(18, 16), Size = UDim2.new(0.5, -10, 1, -32), ZIndex = 5 }, banner)
@@ -2747,14 +2712,6 @@ local Library = (function()
                                 end
                                 if n % 16 == 1 then
                                     ease(artScale, 8, { Scale = artScale.Scale > 1.1 and 1.06 or 1.16 }, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut)
-                                end
-                                liveDot.BackgroundTransparency = (n % 2 == 0) and 0 or 0.7
-                                local out = n % 2 == 0
-                                for _, br in ipairs(brackets) do
-                                    local off = out and 0 or 4
-                                    ease(br.holder, 0.5, {
-                                        Position = UDim2.new(br.right and 1 or 0, br.right and -off or off, br.bottom and 1 or 0, br.bottom and -off or off),
-                                    }, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut)
                                 end
                             end
                         end
