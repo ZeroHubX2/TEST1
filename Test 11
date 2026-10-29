@@ -286,7 +286,8 @@ local Library = (function()
         click = { BUBBLE, 1.12 }, tab = { BUBBLE, 1.28 }, on = { BUBBLE, 1.45 }, off = { BUBBLE, 0.86 },
         tick = { BUBBLE, 1.7, 0.45 }, open = { BUBBLE, 1.0 }, select = { BUBBLE, 1.2 }, alert = { BUBBLE, 0.72, 1.2 },
         copy = { BUBBLE, 1.55 }, notify = { BUBBLE, 1.3 }, notify2 = { BUBBLE, 1.62 },
-        flip = { "rbxassetid://15675037413", 1 }, bookOpen = { "rbxassetid://15675024286", 1 }, bookClose = { "rbxassetid://9118833191", 1 },
+        uiOpen = { BUBBLE, 0.95 }, uiOpen2 = { BUBBLE, 1.42 }, uiClose = { BUBBLE, 1.3 }, uiClose2 = { BUBBLE, 0.78 },
+        whoosh = { "rbxassetid://15675024286", 1.15, 0.35 },
     }
     local sfxCache, sfxLast = {}, {}
     local sfxFolder
@@ -839,7 +840,7 @@ local Library = (function()
 
     Lib.Folder = "ZeroX UI"
     Lib.Name = "ZeroX UI"
-    Lib.Version = "3.9"
+    Lib.Version = "4.0"
     Lib.AutoSave = false
     local function fsOk() return writefile and readfile and isfile end
     function Lib:EnsureFolder(path)
@@ -1463,6 +1464,7 @@ local Library = (function()
                 W.active.paint(false)
             end
             if W.active then sfx("tab") end
+            Lib._activeTab = tostring(tab.Title or "")
             W.active = tab
             tab.page.Visible = true
             tab.paint(true)
@@ -3592,9 +3594,10 @@ local Library = (function()
                     stat.Text = "R E A D Y"
                     stat.TextColor3 = col:Lerp(Color3.new(1, 1, 1), 0.3)
                 end)
-                sfx("bookOpen", 0.6)
+                sfx("uiOpen")
+                task.delay(0.1, function() sfx("uiOpen2") end)
                 task.delay(0.62, function()
-                    sfx("flip")
+                    sfx("whoosh")
                     flip(0, turn, Enum.EasingDirection.InOut)
                     ease(shade, turn, { BackgroundTransparency = 0.2 }, Enum.EasingStyle.Quad, Enum.EasingDirection.In)
                     ease(edgeShadow, turn * 0.5, { BackgroundTransparency = 0.3 }, Enum.EasingStyle.Quad)
@@ -3607,8 +3610,9 @@ local Library = (function()
                 edgeShadow.Position = UDim2.fromOffset(left, cy)
                 shade.BackgroundTransparency = 0.2
                 local d1 = turn * 0.85
-                sfx("flip")
-                task.delay(d1 * 0.8, function() sfx("bookClose") end)
+                sfx("whoosh")
+                sfx("uiClose")
+                task.delay(d1 * 0.8, function() sfx("uiClose2") end)
                 flip(w, d1, Enum.EasingDirection.InOut)
                 ease(shade, d1, { BackgroundTransparency = 1 }, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
                 ease(edgeShadow, d1 * 0.5, { BackgroundTransparency = 0.3 }, Enum.EasingStyle.Quad)
@@ -3643,32 +3647,116 @@ local Library = (function()
         return Window
     end
 
-    local banners = inst("Frame", {
-        Name = "Banners", BackgroundTransparency = 1, AnchorPoint = Vector2.new(0.5, 0), Position = UDim2.new(0.5, 0, 0, 60),
-        Size = UDim2.fromOffset(360, 0), AutomaticSize = Enum.AutomaticSize.Y,
+    local NW, CH, PEEK = 340, 70, 9
+    local ncenter = inst("Frame", {
+        Name = "Notifications", BackgroundTransparency = 1, AnchorPoint = Vector2.new(1, 1), Position = UDim2.new(1, -16, 1, -16),
+        Size = UDim2.fromOffset(NW, 600),
     }, top)
-    list(banners, nil, 8, Enum.HorizontalAlignment.Center)
+    list(ncenter, nil, 10, Enum.HorizontalAlignment.Right, Enum.VerticalAlignment.Bottom)
+    local groups = {}
+    local gOrder = 0
+    local function relayoutGroup(g)
+        local n = #g.cards
+        local shown = math.min(n, 3)
+        local gh = 22 + CH + PEEK * math.max(shown - 1, 0)
+        if Lib.FX then ease(g.frame, 0.4, { Size = UDim2.fromOffset(NW, gh) }, Enum.EasingStyle.Quint) else g.frame.Size = UDim2.fromOffset(NW, gh) end
+        g.countL.Text = n > 1 and (n .. " notifications") or "1 notification"
+        for i = n, 1, -1 do
+            local c = g.cards[i]
+            local d = n - i
+            local goal = {
+                Position = UDim2.new(0.5, 0, 0, d * PEEK),
+                GroupTransparency = d == 0 and 0 or (d == 1 and 0.45 or (d == 2 and 0.7 or 1)),
+            }
+            c.frame.ZIndex = 20 - d
+            c.frame.Visible = d <= 2
+            if Lib.FX then
+                ease(c.frame, 0.45, goal, Enum.EasingStyle.Quint)
+                ease(c.scale, 0.45, { Scale = 1 - d * 0.05 }, Enum.EasingStyle.Quint)
+            else
+                c.frame.Position = goal.Position
+                c.frame.GroupTransparency = goal.GroupTransparency
+                c.scale.Scale = 1 - d * 0.05
+            end
+        end
+    end
+    local function removeCard(g, c)
+        if c.gone then return end
+        c.gone = true
+        for i, x in ipairs(g.cards) do
+            if x == c then table.remove(g.cards, i) break end
+        end
+        if Lib.FX then
+            ease(c.frame, 0.3, { Position = UDim2.new(1.4, 0, 0, c.frame.Position.Y.Offset), GroupTransparency = 1 }, Enum.EasingStyle.Quart, Enum.EasingDirection.In)
+        end
+        task.delay(Lib.FX and 0.32 or 0, function() pcall(function() c.frame:Destroy() end) end)
+        if #g.cards == 0 then
+            groups[g.key] = nil
+            if Lib.FX then
+                ease(g.head, 0.2, { GroupTransparency = 1 })
+                ease(g.frame, 0.35, { Size = UDim2.fromOffset(NW, 0) }, Enum.EasingStyle.Quart, Enum.EasingDirection.InOut)
+                task.delay(0.36, function() pcall(function() g.frame:Destroy() end) end)
+            else
+                pcall(function() g.frame:Destroy() end)
+            end
+        else
+            relayoutGroup(g)
+        end
+    end
+    local function getGroup(key, iconName, col)
+        local g = groups[key]
+        if g then
+            gOrder = gOrder + 1
+            g.frame.LayoutOrder = gOrder
+            return g, false
+        end
+        gOrder = gOrder + 1
+        g = { key = key, cards = {} }
+        g.frame = inst("Frame", { Name = "Group", BackgroundTransparency = 1, Size = UDim2.fromOffset(NW, 0), LayoutOrder = gOrder, ClipsDescendants = false }, ncenter)
+        g.head = inst("CanvasGroup", { BackgroundTransparency = 1, Size = UDim2.new(1, 0, 0, 18), GroupTransparency = Lib.FX and 1 or 0 }, g.frame)
+        local hrow = inst("Frame", { BackgroundTransparency = 1, Size = UDim2.new(1, -8, 1, 0), Position = UDim2.fromOffset(4, 0) }, g.head)
+        list(hrow, Enum.FillDirection.Horizontal, 6, nil, Enum.VerticalAlignment.Center)
+        local hi = icon(iconName or "info", 12, hrow, col)
+        hi.LayoutOrder = 1
+        text({
+            Text = string.upper(key), FontFace = F.Bold, TextSize = 11, TextColor3 = Color3.fromRGB(215, 215, 222),
+            AutomaticSize = Enum.AutomaticSize.X, Size = UDim2.fromOffset(0, 18), LayoutOrder = 2,
+        }, hrow)
+        text({ Text = "·", FontFace = F.Bold, TextSize = 11, TextColor3 = C.Dim, AutomaticSize = Enum.AutomaticSize.X, Size = UDim2.fromOffset(0, 18), LayoutOrder = 3 }, hrow)
+        g.countL = text({ Text = "", FontFace = F.Med, TextSize = 11, TextColor3 = C.Sub, AutomaticSize = Enum.AutomaticSize.X, Size = UDim2.fromOffset(0, 18), LayoutOrder = 4 }, hrow)
+        local clr = inst("TextButton", {
+            Text = "Clear", FontFace = F.Semi, TextSize = 11, TextColor3 = C.Sub, AutoButtonColor = false, BackgroundColor3 = Color3.fromRGB(28, 28, 33),
+            BorderSizePixel = 0, AnchorPoint = Vector2.new(1, 0.5), Position = UDim2.new(1, -2, 0.5, 0), AutomaticSize = Enum.AutomaticSize.X,
+            Size = UDim2.fromOffset(0, 18),
+        }, g.head)
+        round(clr)
+        pad(clr, 8, 8, 0, 0)
+        clr.MouseButton1Click:Connect(function()
+            for i = #g.cards, 1, -1 do removeCard(g, g.cards[i]) end
+        end)
+        g.stack = inst("Frame", { BackgroundTransparency = 1, Position = UDim2.fromOffset(0, 22), Size = UDim2.new(1, 0, 0, CH) }, g.frame)
+        groups[key] = g
+        if Lib.FX then ease(g.head, 0.3, { GroupTransparency = 0 }) end
+        return g, true
+    end
     function Lib:Notify(ncfg)
         sfx("notify", 0.9)
         task.delay(0.09, function() sfx("notify2", 0.8) end)
         pcall(function()
             local vp = viewport()
-            local BW = math.min(360, vp.X - 24)
-            local y = 10
-            local sbf = Lib._statusBar
-            if sbf and sbf.Visible and Lib.StatusOn then y = sbf.Position.Y.Offset + sbf.AbsoluteSize.Y + 10 end
-            banners.Size = UDim2.fromOffset(BW, 0)
-            banners.Position = UDim2.new(0.5, 0, 0, y)
-            Lib._toastN = (Lib._toastN or 0) + 1
-            local CH = 74
-            local wrapB = inst("Frame", { Name = "Banner", BackgroundTransparency = 1, Size = UDim2.new(1, 0, 0, Lib.FX and 0 or CH), LayoutOrder = -Lib._toastN }, banners)
-            local card = inst("CanvasGroup", {
-                BackgroundColor3 = Color3.fromRGB(20, 20, 24), BorderSizePixel = 0, Size = UDim2.new(1, 0, 0, CH),
-                Position = UDim2.fromOffset(0, Lib.FX and -(CH + 24) or 0), GroupTransparency = Lib.FX and 1 or 0,
-            }, wrapB)
-            round(card, 18)
-            local cs = stroke(card, 0.85)
+            NW = math.min(340, vp.X - 24)
+            ncenter.Size = UDim2.fromOffset(NW, math.max(vp.Y - 120, 200))
             local col = ncfg.Color or accent()
+            local key = tostring(ncfg.Group or Lib._activeTab or Lib.Name)
+            if key == "" then key = Lib.Name end
+            local g = getGroup(key, ncfg.Icon or "info", col)
+            local card = inst("CanvasGroup", {
+                BackgroundColor3 = Color3.fromRGB(22, 22, 27), BorderSizePixel = 0, AnchorPoint = Vector2.new(0.5, 0),
+                Size = UDim2.new(1, 0, 0, CH), Position = UDim2.new(0.5, 0, 0, Lib.FX and CH + 40 or 0), GroupTransparency = Lib.FX and 1 or 0, ZIndex = 20,
+            }, g.stack)
+            round(card, 18)
+            local cst = stroke(card, 0.85)
+            local cscale = inst("UIScale", { Scale = Lib.FX and 0.9 or 1 }, card)
             local tile = inst("Frame", { BackgroundColor3 = col, BorderSizePixel = 0, AnchorPoint = Vector2.new(0, 0.5), Position = UDim2.new(0, 14, 0.5, 0), Size = UDim2.fromOffset(40, 40) }, card)
             round(tile, 12)
             inst("UIGradient", { Rotation = 45, Color = ColorSequence.new(Color3.new(1, 1, 1), Color3.fromRGB(170, 170, 170)) }, tile)
@@ -3676,54 +3764,36 @@ local Library = (function()
             ti.AnchorPoint = Vector2.new(0.5, 0.5)
             ti.Position = UDim2.fromScale(0.5, 0.5)
             text({
-                Text = string.upper(Lib.Name), FontFace = F.Bold, TextSize = 11, TextColor3 = C.Sub, Position = UDim2.fromOffset(66, 11),
-                Size = UDim2.new(1, -130, 0, 14),
+                Text = tostring(ncfg.Title or Lib.Name), FontFace = F.Bold, TextSize = 15, TextColor3 = Color3.new(1, 1, 1),
+                Position = UDim2.fromOffset(66, 14), Size = UDim2.new(1, -120, 0, 19), TextTruncate = Enum.TextTruncate.AtEnd,
             }, card)
             text({
-                Text = "now", FontFace = F.Med, TextSize = 11, TextColor3 = C.Dim, AnchorPoint = Vector2.new(1, 0), Position = UDim2.new(1, -16, 0, 11),
+                Text = "now", FontFace = F.Med, TextSize = 11, TextColor3 = C.Dim, AnchorPoint = Vector2.new(1, 0), Position = UDim2.new(1, -16, 0, 16),
                 Size = UDim2.fromOffset(50, 14), TextXAlignment = Enum.TextXAlignment.Right,
             }, card)
             text({
-                Text = tostring(ncfg.Title or Lib.Name), FontFace = F.Bold, TextSize = 15, TextColor3 = Color3.new(1, 1, 1),
-                Position = UDim2.fromOffset(66, 27), Size = UDim2.new(1, -82, 0, 19), TextTruncate = Enum.TextTruncate.AtEnd,
-            }, card)
-            text({
                 Text = tostring(ncfg.Content or ""), FontFace = F.Med, TextSize = 13, TextColor3 = Color3.fromRGB(175, 175, 185),
-                Position = UDim2.fromOffset(66, 47), Size = UDim2.new(1, -82, 0, 17), TextTruncate = Enum.TextTruncate.AtEnd,
+                Position = UDim2.fromOffset(66, 36), Size = UDim2.new(1, -82, 0, 17), TextTruncate = Enum.TextTruncate.AtEnd,
             }, card)
             local bar = inst("Frame", { BackgroundColor3 = col, BorderSizePixel = 0, AnchorPoint = Vector2.new(0, 1), Position = UDim2.new(0, 18, 1, -1), Size = UDim2.new(1, -36, 0, 2) }, card)
             round(bar)
             local hit = inst("TextButton", { Text = "", AutoButtonColor = false, BackgroundTransparency = 1, Size = UDim2.fromScale(1, 1), ZIndex = 5 }, card)
-            local gone = false
-            local function dismiss()
-                if gone then return end
-                gone = true
-                if Lib.FX then
-                    ease(card, 0.32, { Position = UDim2.fromOffset(0, -(CH + 24)), GroupTransparency = 1 }, Enum.EasingStyle.Quart, Enum.EasingDirection.In)
-                    ease(wrapB, 0.3, { Size = UDim2.new(1, 0, 0, 0) }, Enum.EasingStyle.Quart, Enum.EasingDirection.InOut)
-                    task.delay(0.34, function() pcall(function() wrapB:Destroy() end) end)
-                else
-                    pcall(function() wrapB:Destroy() end)
-                end
-            end
-            hit.MouseButton1Click:Connect(dismiss)
-            hit.MouseEnter:Connect(function() tw(cs, 0.15, { Color = col, Transparency = 0.4 }) end)
-            hit.MouseLeave:Connect(function() tw(cs, 0.2, { Color = C.Line, Transparency = 0.85 }) end)
+            local c = { frame = card, scale = cscale }
+            table.insert(g.cards, c)
+            while #g.cards > 6 do removeCard(g, g.cards[1]) end
+            hit.MouseButton1Click:Connect(function() removeCard(g, c) end)
+            hit.MouseEnter:Connect(function() tw(cst, 0.15, { Color = col, Transparency = 0.4 }) end)
+            hit.MouseLeave:Connect(function() tw(cst, 0.2, { Color = C.Line, Transparency = 0.85 }) end)
+            relayoutGroup(g)
             if Lib.FX then
-                ease(wrapB, 0.35, { Size = UDim2.new(1, 0, 0, CH) }, Enum.EasingStyle.Quint)
-                ease(card, 0.55, { Position = UDim2.fromOffset(0, 0), GroupTransparency = 0 }, Enum.EasingStyle.Back)
+                ease(card, 0.55, { Position = UDim2.new(0.5, 0, 0, 0), GroupTransparency = 0 }, Enum.EasingStyle.Back)
+                ease(cscale, 0.55, { Scale = 1 }, Enum.EasingStyle.Back)
                 local ts = inst("UIScale", { Scale = 0.4 }, tile)
-                task.delay(0.12, function() ease(ts, 0.45, { Scale = 1 }, Enum.EasingStyle.Back) end)
+                task.delay(0.15, function() ease(ts, 0.45, { Scale = 1 }, Enum.EasingStyle.Back) end)
             end
-            local all = {}
-            for _, ch in ipairs(banners:GetChildren()) do
-                if ch:IsA("Frame") then all[#all + 1] = ch end
-            end
-            table.sort(all, function(x, z) return x.LayoutOrder < z.LayoutOrder end)
-            for i = 5, #all do pcall(function() all[i]:Destroy() end) end
             local dur = tonumber(ncfg.Duration) or 4
             TweenService:Create(bar, TweenInfo.new(dur, Enum.EasingStyle.Linear), { Size = UDim2.new(0, 0, 0, 2) }):Play()
-            task.delay(dur, dismiss)
+            task.delay(dur, function() removeCard(g, c) end)
         end)
     end
 
