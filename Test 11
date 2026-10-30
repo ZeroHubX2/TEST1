@@ -446,6 +446,10 @@ local Library = (function()
     local function closePopup()
         local f, cb = Pop.frame, Pop.onClose
         Pop.frame, Pop.onClose = nil, nil
+        if Pop.follow then
+            pcall(function() Pop.follow:Disconnect() end)
+            Pop.follow = nil
+        end
         overlay.Visible = false
         if f then pcall(function() f:Destroy() end) end
         if cb then pcall(cb) end
@@ -461,14 +465,30 @@ local Library = (function()
         }, nil)
         if anchor then
             local ap, as = anchor.AbsolutePosition - overlay.AbsolutePosition, anchor.AbsoluteSize
-            local down, up = vp.Y - 10 - (ap.Y + as.Y + 6), ap.Y - 16
-            local below = h * s <= down or down >= up
-            h = math.min(h, math.max((below and down or up) / s, 60))
+            local clip = anchor:FindFirstAncestorWhichIsA("ScrollingFrame")
+            local down = vp.Y - 10 - (ap.Y + as.Y + 6)
+            h = math.min(h, math.max(down / s, 60))
             w = math.min(w, (vp.X - 16) / s)
             f.Size = UDim2.fromOffset(w, h)
-            local x = math.clamp(ap.X + as.X, w * s + 8, math.max(w * s + 8, vp.X - 8))
-            f.AnchorPoint = Vector2.new(1, below and 0 or 1)
-            f.Position = UDim2.fromOffset(x, below and (ap.Y + as.Y + 6) or (ap.Y - 6))
+            f.AnchorPoint = Vector2.new(1, 0)
+            local function place()
+                local p, sz = anchor.AbsolutePosition - overlay.AbsolutePosition, anchor.AbsoluteSize
+                local x = math.clamp(p.X + sz.X, w * s + 8, math.max(w * s + 8, vp.X - 8))
+                f.Position = UDim2.fromOffset(x, p.Y + sz.Y + 6)
+            end
+            place()
+            Pop.follow = game:GetService("RunService").RenderStepped:Connect(function()
+                if Pop.frame ~= f or not anchor.Parent then return end
+                if clip then
+                    local cp, cs = clip.AbsolutePosition, clip.AbsoluteSize
+                    local mid = anchor.AbsolutePosition.Y + anchor.AbsoluteSize.Y / 2
+                    if mid < cp.Y or mid > cp.Y + cs.Y or not anchor.Visible then
+                        closePopup()
+                        return
+                    end
+                end
+                place()
+            end)
         else
             f.AnchorPoint = Vector2.new(0.5, 0.5)
             f.Position = UDim2.fromScale(0.5, 0.5)
