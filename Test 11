@@ -1252,7 +1252,7 @@ local Library = (function()
         local tabsBar = inst("ScrollingFrame", {
             Name = "Tabs", BackgroundTransparency = 1, BorderSizePixel = 0, Position = UDim2.fromOffset(5, 0), Size = UDim2.new(1, -51, 1, 0),
             CanvasSize = UDim2.new(), AutomaticCanvasSize = Enum.AutomaticSize.X, ScrollingDirection = Enum.ScrollingDirection.X,
-            ScrollBarThickness = 0, ElasticBehavior = Enum.ElasticBehavior.WhenScrollable,
+            ScrollBarThickness = 0, ScrollBarImageTransparency = 1, ElasticBehavior = Enum.ElasticBehavior.WhenScrollable,
         }, tabsWrap)
         local findBtn = inst("TextButton", {
             Name = "Find", Text = "", AutoButtonColor = false, BackgroundColor3 = C.Raise, BorderSizePixel = 0,
@@ -1342,10 +1342,14 @@ local Library = (function()
             local items = n + (#tabsRow:GetChildren() - n - 1)
             local gaps = math.max(items - 1, 0) * 4
             local fill = natural + other + gaps <= avail
+            local pw = math.floor((avail - other - gaps) / n)
+            if fill and pills[1].AutomaticSize == Enum.AutomaticSize.None and math.abs(pills[1].Size.X.Offset - pw) <= 1 then
+                pw = pills[1].Size.X.Offset
+            end
             for _, pl in ipairs(pills) do
                 if fill then
                     pl.AutomaticSize = Enum.AutomaticSize.None
-                    pl.Size = UDim2.fromOffset(math.floor((avail - other - gaps) / n), 38)
+                    pl.Size = UDim2.fromOffset(pw, 38)
                 else
                     pl.AutomaticSize = Enum.AutomaticSize.X
                     pl.Size = UDim2.fromOffset(0, 38)
@@ -1357,6 +1361,7 @@ local Library = (function()
             W.fitQ = true
             task.defer(function()
                 W.fitQ = false
+                if Lib._animWin then return end
                 pcall(W.fitTabs)
             end)
         end
@@ -2189,6 +2194,7 @@ local Library = (function()
                 local opt = makeOption(id, "Dropdown", ocfg)
                 local multi = ocfg.Multi and true or false
                 opt.Multi, opt.Values = multi, ocfg.Values or {}
+                opt.Images = ocfg.Images or {}
                 local r = newRow(cur(), ocfg.Title, ocfg.Description, 170, true)
                 r.opt, r.kind = opt, "Dropdown"
                 local btn = inst("TextButton", {
@@ -2205,6 +2211,10 @@ local Library = (function()
                 local lbl = text({
                     Text = "", FontFace = F.Semi, TextSize = 14, Position = UDim2.fromOffset(19, 0), Size = UDim2.new(1, -54, 1, 0),
                     TextTruncate = Enum.TextTruncate.AtEnd,
+                }, btn)
+                local bimg = inst("ImageLabel", {
+                    BackgroundTransparency = 1, AnchorPoint = Vector2.new(0, 0.5), Position = UDim2.new(0, 17, 0.5, 0),
+                    Size = UDim2.fromOffset(26, 26), ScaleType = Enum.ScaleType.Fit, Visible = false,
                 }, btn)
                 local cbg = inst("Frame", {
                     BackgroundColor3 = C.Hover, BorderSizePixel = 0, AnchorPoint = Vector2.new(1, 0.5), Position = UDim2.new(1, -8, 0.5, 0),
@@ -2254,6 +2264,11 @@ local Library = (function()
                     else
                         lbl.Text = opt.Value ~= nil and tostring(opt.Value) or "-"
                     end
+                    local im = not multi and opt.Value ~= nil and opt.Images[opt.Value]
+                    bimg.Image = im and tostring(im) or ""
+                    bimg.Visible = im and true or false
+                    lbl.Position = UDim2.fromOffset(im and 49 or 19, 0)
+                    lbl.Size = UDim2.new(1, im and -84 or -54, 1, 0)
                 end
                 if multi then
                     opt.Value = toSet(ocfg.Default)
@@ -2267,12 +2282,14 @@ local Library = (function()
                 local function openMenu()
                     local vals = opt.Values
                     local n = #vals
-                    local itemH = 40
+                    local hasImg = next(opt.Images) ~= nil
+                    local itemH = hasImg and 48 or 40
+                    local lx = hasImg and 82 or 42
                     local filter = n > 6
                     local headH = 50
                     local h = headH + (filter and 46 or 0) + math.min(math.max(n, 1), 6) * (itemH + 3) + 10
                     local s = math.max(fit.Scale, 0.01)
-                    local w = math.max(btn.AbsoluteSize.X / s, 240)
+                    local w = math.max(btn.AbsoluteSize.X / s, hasImg and 340 or 240)
                     local f = openPopup(btn, w, h)
                     local fullH = f.Size.Y.Offset
                     f.ClipsDescendants = true
@@ -2423,9 +2440,15 @@ local Library = (function()
                         ck.Position = UDim2.fromScale(0.5, 0.5)
                         ck.ZIndex = 54
                         local l = text({
-                            Text = tostring(v), FontFace = F.Semi, TextSize = 14, Position = UDim2.fromOffset(42, 0), Size = UDim2.new(1, -80, 1, 0),
+                            Text = tostring(v), FontFace = F.Semi, TextSize = 14, Position = UDim2.fromOffset(lx, 0), Size = UDim2.new(1, -(lx + 38), 1, 0),
                             TextTruncate = Enum.TextTruncate.AtEnd, ZIndex = 53,
                         }, b)
+                        if opt.Images[v] then
+                            inst("ImageLabel", {
+                                BackgroundTransparency = 1, AnchorPoint = Vector2.new(0, 0.5), Position = UDim2.new(0, 40, 0.5, 0),
+                                Size = UDim2.fromOffset(36, 36), ScaleType = Enum.ScaleType.Fit, Image = tostring(opt.Images[v]), ZIndex = 53,
+                            }, b)
+                        end
                         local num = text({
                             Text = string.format("%02d", i), FontFace = F.Mono, TextSize = 11, TextColor3 = C.Dim, AnchorPoint = Vector2.new(1, 0.5),
                             Position = UDim2.new(1, -12, 0.5, 0), Size = UDim2.fromOffset(30, 16), TextXAlignment = Enum.TextXAlignment.Right, ZIndex = 53,
@@ -2435,21 +2458,21 @@ local Library = (function()
                         if Lib.FX and i <= 12 then
                             l.TextTransparency = 1
                             num.TextTransparency = 1
-                            l.Position = UDim2.fromOffset(60, 0)
+                            l.Position = UDim2.fromOffset(lx + 18, 0)
                             box.Size = UDim2.fromOffset(0, 0)
                             task.delay(0.08 + (i - 1) * 0.035, function()
-                                ease(l, 0.4, { TextTransparency = 0, Position = UDim2.fromOffset(42, 0) })
+                                ease(l, 0.4, { TextTransparency = 0, Position = UDim2.fromOffset(lx, 0) })
                                 ease(num, 0.4, { TextTransparency = 0 })
                                 ease(box, 0.4, { Size = UDim2.fromOffset(18, 18) }, Enum.EasingStyle.Back)
                             end)
                         end
                         b.MouseEnter:Connect(function()
                             moveHl(b)
-                            tw(l, 0.15, { Position = UDim2.fromOffset(46, 0) })
+                            tw(l, 0.15, { Position = UDim2.fromOffset(lx + 4, 0) })
                             tw(num, 0.15, { TextColor3 = accent() })
                         end)
                         b.MouseLeave:Connect(function()
-                            tw(l, 0.15, { Position = UDim2.fromOffset(42, 0) })
+                            tw(l, 0.15, { Position = UDim2.fromOffset(lx, 0) })
                             tw(num, 0.15, { TextColor3 = C.Dim })
                         end)
                         b.MouseButton1Click:Connect(function()
@@ -2487,6 +2510,10 @@ local Library = (function()
                     if menuOpen then closePopup() else openMenu() end
                 end)
                 opt._closeMenu = function() if menuOpen then closePopup() end end
+                function opt:SetImages(t)
+                    self.Images = type(t) == "table" and t or {}
+                    refresh()
+                end
 
                 if multi then
                     function opt:SetValue(v)
@@ -3825,6 +3852,7 @@ local Library = (function()
                 pcall(function() edgeShadow:Destroy() end)
                 Lib._animWin = false
                 fit.Scale = Lib._baseScale or sc
+                if W and W.queueFit then W.queueFit() end
                 Lib._folding = false
                 if done then pcall(done) end
             end
