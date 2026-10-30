@@ -3468,6 +3468,7 @@ local Library = (function()
         end
         dragFrom(head)
         dragFrom(brand)
+        dragFrom(bar)
         connect(grip.InputBegan, function(i)
             if not isPress(i) then return end
             W.size = { m = i.Position, w = body.Size.X.Offset, h = body.Size.Y.Offset, p = body.Position }
