@@ -7,6 +7,7 @@ local Library = (function()
     local UIS = game:GetService("UserInputService")
     local TweenService = game:GetService("TweenService")
     local TextService = game:GetService("TextService")
+    local ContentProvider = game:GetService("ContentProvider")
     local LP = game:GetService("Players").LocalPlayer
     local LOGO_ID = "rbxassetid://132023049848714"
 
@@ -192,6 +193,20 @@ local Library = (function()
         for k, v in pairs(props) do t[k] = v end
         t.Parent = parent
         return t
+    end
+    local function fitText(t, max, min)
+        t.TextTruncate = Enum.TextTruncate.None
+        t.TextWrapped = true
+        t.TextScaled = true
+        inst("UITextSizeConstraint", { MaxTextSize = max, MinTextSize = min }, t)
+        return t
+    end
+    local function preload(imgs)
+        local list = {}
+        for _, v in pairs(type(imgs) == "table" and imgs or {}) do
+            if v ~= nil and tostring(v) ~= "" then list[#list + 1] = tostring(v) end
+        end
+        if #list > 0 then task.spawn(pcall, ContentProvider.PreloadAsync, ContentProvider, list) end
     end
     local function icon(name, size, parent, col)
         return inst("ImageLabel", {
@@ -2195,6 +2210,7 @@ local Library = (function()
                 local multi = ocfg.Multi and true or false
                 opt.Multi, opt.Values = multi, ocfg.Values or {}
                 opt.Images = ocfg.Images or {}
+                preload(opt.Images)
                 local r = newRow(cur(), ocfg.Title, ocfg.Description, 170, true)
                 r.opt, r.kind = opt, "Dropdown"
                 local btn = inst("TextButton", {
@@ -2212,6 +2228,7 @@ local Library = (function()
                     Text = "", FontFace = F.Semi, TextSize = 14, Position = UDim2.fromOffset(19, 0), Size = UDim2.new(1, -54, 1, 0),
                     TextTruncate = Enum.TextTruncate.AtEnd,
                 }, btn)
+                fitText(lbl, 14, 9)
                 local bimg = inst("ImageLabel", {
                     BackgroundTransparency = 1, AnchorPoint = Vector2.new(0, 0.5), Position = UDim2.new(0, 17, 0.5, 0),
                     Size = UDim2.fromOffset(26, 26), ScaleType = Enum.ScaleType.Fit, Visible = false,
@@ -2443,6 +2460,7 @@ local Library = (function()
                             Text = tostring(v), FontFace = F.Semi, TextSize = 14, Position = UDim2.fromOffset(lx, 0), Size = UDim2.new(1, -(lx + 38), 1, 0),
                             TextTruncate = Enum.TextTruncate.AtEnd, ZIndex = 53,
                         }, b)
+                        fitText(l, 14, 9)
                         if opt.Images[v] then
                             inst("ImageLabel", {
                                 BackgroundTransparency = 1, AnchorPoint = Vector2.new(0, 0.5), Position = UDim2.new(0, 40, 0.5, 0),
@@ -2512,6 +2530,7 @@ local Library = (function()
                 opt._closeMenu = function() if menuOpen then closePopup() end end
                 function opt:SetImages(t)
                     self.Images = type(t) == "table" and t or {}
+                    preload(self.Images)
                     refresh()
                 end
 
