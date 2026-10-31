@@ -154,7 +154,7 @@ local Library = (function()
     local function safe(fn, ...)
         pcall(function() if setthreadidentity then setthreadidentity(8) end end)
         local ok, err = pcall(fn, ...)
-        if not ok then warn("[" .. tostring(Lib.Name or "ZeroX UI") .. "] " .. tostring(err)) end
+        if not ok then warn("[" .. tostring(Lib.Name or "Zero Hub") .. "] " .. tostring(err)) end
     end
     local function connect(sig, fn)
         local c = sig:Connect(fn)
@@ -942,8 +942,8 @@ local Library = (function()
         if Lib.OnToggle then pcall(Lib.OnToggle) end
     end
 
-    Lib.Folder = "ZeroX UI"
-    Lib.Name = "ZeroX UI"
+    Lib.Folder = "Zero Hub"
+    Lib.Name = "Zero Hub"
     Lib.Version = "4.9"
     Lib.AutoSave = false
     local function fsOk() return writefile and readfile and isfile end
