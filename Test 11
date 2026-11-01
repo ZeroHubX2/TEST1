@@ -944,7 +944,10 @@ local Library = (function()
 
     Lib.Folder = "Zero Hub"
     Lib.Name = "Zero Hub"
-    Lib.Version = "4.9"
+    Lib.Version = "5.0"
+    Lib.Author = "Zero Hub"
+    Lib.Copyright = "ZeroHub UI - Copyright (c) 2026 Zero Hub. Original work by Zero Hub. MIT License."
+    Lib.Source = "https://github.com/ZeroHubX2/TEST1"
     Lib.AutoSave = false
     local function fsOk() return writefile and readfile and isfile end
     function Lib:EnsureFolder(path)
@@ -4319,4 +4322,5 @@ end)()
 
 Env.__ZeroXUI = Library
 print("[ZeroHub UI] v" .. tostring(Library.Version) .. " loaded")
+print("[ZeroHub UI] " .. tostring(Library.Copyright) .. " " .. tostring(Library.Source))
 return Library
