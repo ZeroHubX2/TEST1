@@ -1,7 +1,7 @@
 # ⚡ ZeroHub UI
 
-UI สำหรับสคริปต์ Roblox ของทีม ZeroHub
-แถบหมวดอยู่ด้านบน การ์ดจัดเรียงเองตามขนาดจอ และใช้ได้ทั้งมือถือและ PC
+ไลบรารี UI สำหรับสคริปต์ Roblox ของทีม ZeroHub
+ธีมมืดพร้อม 7 สไตล์ แถบหมวดอยู่ด้านบน การ์ดเรียงซ้าย-ขวา ใช้ได้ทั้งมือถือและ PC ฟอนต์ Builder Sans
 
 ```lua
 local UI = loadstring(game:HttpGet("https://raw.githubusercontent.com/ZeroHubX2/TEST1/refs/heads/main/Test%2011"))()
@@ -11,13 +11,20 @@ local UI = loadstring(game:HttpGet("https://raw.githubusercontent.com/ZeroHubX2/
 
 ## ✨ มีอะไรในกล่อง
 
-- 📱 **ปรับตามจอเอง:** การ์ดเรียง 3, 2 หรือ 1 คอลัมน์ตามความกว้าง จอเตี้ยจะย่อส่วนหัวลงให้ หน้าต่างไม่ล้นจอ
-- 🧭 **แถบหมวดด้านบน:** มีแคปซูลสีบอกหมวดที่เลือก ลากเลื่อนได้ มีลูกศรตอนหมวดล้นแถบ
-- 🎚️ **ตัวควบคุมครบ:** Toggle, Slider (มีปุ่ม `-` `+` และพิมพ์ตัวเลขได้), Dropdown (เลือกได้ทีละอันหรือหลายอัน), Input, Keybind และปุ่ม
-- 🎮 **การ์ดสำเร็จรูป:** การ์ดข้อมูลเกม, การ์ดสรุปการรัน, ตัวเลขสถิติ, กราฟ และปุ่มลัด
-- 📌 **แถบสถานะลอย:** บอกจำนวนฟังก์ชันที่เปิดอยู่ FPS ping เวลา และเวลาที่รัน ลากย้ายได้
-- 💾 **Config ในตัว:** บันทึกและโหลดค่าทุกตัวเลือกเป็น JSON เปิดบันทึกอัตโนมัติได้
-- 🌈 **อนิเมชันและเอฟเฟกต์:** แสงวิ่งรอบขอบ จุดแสงลอย ripple ตอนกด และการเปลี่ยนหน้าแบบนุ่มๆ ปิดได้ทั้งหมดด้วยคำสั่งเดียว
+- 👋 **หน้าทักทายตอนรัน:** รูปโปรไฟล์ คำทักทายตามเวลา ชื่อผู้เล่นพิมพ์ทีละตัว ชื่อฮับ ชื่อแมพ และแถบโหลด แตะเพื่อข้ามได้
+- 📖 **เปิด/ปิดแบบหนังสือ:** ปกสีดำมีโลโก้ พลิกเปิดจากสันซ้าย และพลิกปิดกลับ พร้อมเสียง
+- 🎨 **7 ธีม:** Crimson, Midnight, Neon Cyber, Gold Royal, Sakura, Toxic และ Mono เปลี่ยนแล้วสีทั้ง UI ไหลเปลี่ยน และจำไว้ใช้ครั้งหน้า
+- 🧭 **แถบหมวดด้านบน:** กรอบสีเลื่อนตามแบบสปริง มีแสงวาบวิ่งผ่าน ถ้าหมวดน้อยปุ่มจะขยายเต็มแถบ ถ้าเยอะลากเลื่อนได้และมีลูกศร
+- 🔎 **ค้นหาทุกหมวด:** ปุ่มแว่นขยายท้ายแถบหมวด (หรือ Ctrl+F) หาได้ทุกการตั้งค่า มีปุ่มกระโดดไปแต่ละหมวด และบอกค่าปัจจุบันของแต่ละอัน
+- 🧱 **2 ฝั่ง:** การ์ดเรียงซ้าย-ขวา จอแคบเหลือคอลัมน์เดียว หน้าต่างย่อพอดีจอเสมอ
+- ❔ **ปุ่ม ? คำอธิบาย:** ซ่อนคำอธิบายไว้หลังไอคอน ? ข้างชื่อ PC เอาเมาส์ชี้ มือถือแตะ
+- 🎚️ **ตัวควบคุมครบ:** Toggle, Slider, Dropdown, Segment, Input, Color Picker, Keybind และปุ่ม
+- 🎮 **การ์ดสำเร็จรูป:** การ์ดแมพ, ตัวเลขสด, สรุปการรัน, สถิติ, กราฟ, ปุ่มลัด, เลือกธีม และจัดการโปรไฟล์
+- 📲 **แจ้งเตือนสไตล์ iPhone:** เด้งขึ้นจากมุมขวาล่าง จัดกลุ่มตามหมวด ซ้อนเป็นกอง แตะหรือปัดเพื่อปิด
+- 📱 **Mini mode:** ย่อหน้าต่างเหลือแถบเล็กที่มีแค่สวิตช์สำคัญ
+- 🔊 **เสียง UI:** เสียงป๊อปฟองสบู่ปรับ pitch ต่างกันในแต่ละการกระทำ
+- 🌈 **เอฟเฟกต์:** แสงออโรร่า จุดแสงลอย แสงวิ่งรอบขอบ แสงตามเมาส์บนการ์ด ripple ตอนกด ปิดทั้งหมดได้ด้วยคำสั่งเดียว
+- 💾 **Config ในตัว:** บันทึก/โหลดทุกตัวเลือกเป็น JSON มีบันทึกอัตโนมัติและหลายโปรไฟล์
 
 ---
 
@@ -42,7 +49,7 @@ task.spawn(function()
 end)
 ```
 
-แค่นี้ก็ได้หน้าต่างที่มีหมวด Main การ์ด Farm และสวิตช์ Auto Farm แล้ว
+> ไฟล์ไลบรารีรันเดี่ยวๆ จะไม่มีอะไรขึ้น หน้าต่างจะขึ้นเมื่อสคริปต์เรียก `CreateWindow` และ `AddTab`
 
 ---
 
@@ -71,38 +78,54 @@ Window                 หน้าต่างหลัก
 local Window = UI:CreateWindow({
     Title = "Zero Hub",
     SubTitle = "Anime Zero",
+    SubCaption = "NOW FARMING",
+    Wordmark = "rbxassetid://105303733304739",
+    WordmarkHeight = 40,
     Logo = "rbxassetid://132023049848714",
-    LogoText = "ZH",
+    Credit = "Made by Zero Hub",
     ToggleKey = Enum.KeyCode.RightControl,
     ConfigFolder = "Zero Hub/Anime Zero",
     CloseNote = "Auto farm stops and the window closes.",
 })
 ```
 
-- `Title`: ชื่อฮับ ใช้เป็นหัวแจ้งเตือนและในกล่องยืนยันตอนกดปิด
-- `SubTitle`: ข้อความเล็กข้างช่องค้นหา
-- `Logo` / `LogoText`: รูปโลโก้ และตัวอักษรที่จะโชว์แทนถ้ารูปโหลดไม่ขึ้น
-- `ToggleKey`: ปุ่มลัดซ่อน/แสดงหน้าต่างบน PC
-- `ConfigFolder`: โฟลเดอร์ที่เก็บไฟล์ config
-- `CloseNote`: ข้อความเตือนตอนกดปุ่ม ✕
-- `Width` / `Height`: ขนาดเริ่มต้นบน PC ถ้าไม่ใส่จะเป็น 1000×640 ส่วนมือถือจะใช้เกือบเต็มจอเอง
+| key | ค่าเริ่มต้น | ใช้ทำอะไร |
+| --- | --- | --- |
+| `Title` | `"Zero Hub"` | ชื่อฮับ ใช้ในแจ้งเตือน หน้าทักทาย ปกหนังสือ และมุมขวาล่าง |
+| `SubTitle` | `""` | ชื่อแมพ โชว์บนหัวหน้าต่าง หน้าทักทาย และปกหนังสือ |
+| `SubCaption` | `"NOW FARMING"` | ข้อความเล็กสีหลักเหนือชื่อแมพ |
+| `Wordmark` | โลโก้ ZERO HUB | รูปชื่อฮับ (พื้นโปร่งใส) ไม่ใส่ก็ได้โลโก้ ZERO HUB ให้เอง ใส่ `false` เพื่อใช้ตัวหนังสือ `Title` แทน มีแสงวิ่งผ่านเองทุก 3 วินาที |
+| `WordmarkHeight` / `WordmarkAspect` | `40` / `3` | ความสูงของรูป และสัดส่วนกว้าง÷สูง ใช้คำนวณความกว้าง |
+| `Logo` / `LogoText` | โลโก้ Zero Hub | รูปบนปุ่มลอยซ่อน/แสดง และตัวอักษรแทนถ้ารูปโหลดไม่ขึ้น |
+| `Credit` | `"Made by <Title>"` | ข้อความบนปกหนังสือ |
+| `Footer` | `Title` | ข้อความมุมขวาล่างของหน้าต่าง |
+| `ToggleKey` | `RightControl` | ปุ่มลัดซ่อน/แสดงบน PC |
+| `ConfigFolder` | `"Zero Hub"` | โฟลเดอร์เก็บ config |
+| `CloseNote` | - | ข้อความในกล่องยืนยันตอนกดปิด |
+| `Welcome` | `true` | หน้าทักทายตอนรันครั้งแรก ใส่ `false` เพื่อปิด |
+| `Width` / `Height` | `1000` / `660` | ขนาดเริ่มต้นบน PC มือถือจะใช้เกือบเต็มจอเอง |
+
+**ปุ่มบนหัวหน้าต่าง (ขวาบน):** Mini mode · บันทึก config · จุดเทาซ่อนหน้าต่าง · จุดสีปิด UI (ถามยืนยันก่อน)
 
 ### ใช้ Window ทำอะไรได้บ้าง
 
 ```lua
 Window:AddSection("Automation")
+local Home = Window:AddTab({ Title = "Home", Icon = "home", Description = "Ready to farm", Greeting = true })
 local Farm = Window:AddTab({ Title = "Farm", Icon = "swords", Description = "Targeting and movement" })
 Window:SetProfile("Playing Naruto")
 ```
 
-- `Window:AddSection(name)`: ใส่เส้นคั่นกลุ่มในแถบหมวด ตัวที่เรียกก่อนหมวดแรกจะไม่แสดงอะไร
-- `Window:AddTab(cfg)`: สร้างหมวดใหม่ ใส่ `Title`, `Icon` และ `Description` ที่จะโชว์ใต้ชื่อหมวด
-- `Window:SetProfile(text)`: เปลี่ยนข้อความข้างช่องค้นหา
+- `Window:AddSection(name)`: เส้นคั่นกลุ่มในแถบหมวด ตัวที่เรียกก่อนหมวดแรกจะไม่แสดงอะไร
+- `Window:AddTab(cfg)`: สร้างหมวด ใส่ `Title`, `Icon`, `Description` ถ้าใส่ `Greeting = true` หัวหน้าจะเป็นคำทักทาย เช่น "Good evening, ชื่อผู้เล่น"
+- `Window:SetProfile(text)`: ข้อความต่อท้ายชื่อผู้เล่นที่มุมซ้ายล่าง
 - `Window.Minimized`: เป็น `true` ตอนหน้าต่างถูกซ่อน
 
 ---
 
 ## 🧩 ชิ้นส่วนในการ์ด
+
+ทุกชิ้นที่มี `Description` จะซ่อนคำอธิบายไว้หลังไอคอน ? ข้างชื่อ
 
 ### 🔘 Toggle: สวิตช์เปิด/ปิด
 
@@ -111,9 +134,12 @@ Farm:AddToggle("AutoFarm", {
     Title = "Auto Farm",
     Description = "Clears every wave for you",
     Default = false,
+    Pin = true,
     Callback = function(on) end,
 })
 ```
+
+- `Pin = true`: ให้สวิตช์นี้ไปโผล่ในแถบ Mini mode
 
 ### 🎚️ Slider: แถบเลื่อนตัวเลข
 
@@ -126,54 +152,49 @@ Farm:AddSlider("Distance", {
 })
 ```
 
-- ใส่หน่วยไว้ในวงเล็บท้ายชื่อ เช่น `(studs)` ช่องตัวเลขจะโชว์เป็น `8 studs`
-- `Rounding` คือจำนวนทศนิยม ใส่ `0` ได้จำนวนเต็ม ใส่ `1` ได้ทศนิยม 1 ตำแหน่ง
-- ปุ่ม `-` `+` เปลี่ยนค่าทีละ 1 ถ้าตั้ง `Rounding = 1` จะเปลี่ยนทีละ 0.1 กดค้างเพื่อเปลี่ยนต่อเนื่องได้
-- แตะที่ช่องตัวเลขเพื่อพิมพ์ค่าเองได้ ถ้าพิมพ์เกินขอบเขต จะถูกบีบให้อยู่ในช่วง `Min`–`Max`
+- ใส่หน่วยในวงเล็บท้ายชื่อ เช่น `(studs)` จะโชว์เป็น `8 studs` และในป้ายตอนลาก
+- `Rounding` คือจำนวนทศนิยม ใส่ `1` ได้ทศนิยม 1 ตำแหน่ง
+- ปุ่ม `-` `+` เปลี่ยนทีละ 1 (หรือ 0.1 ถ้ามีทศนิยม) กดค้างได้ และแตะตัวเลขเพื่อพิมพ์เองได้
 
 ### 📋 Dropdown: เมนูเลือก
 
 ```lua
-Farm:AddDropdown("Target", {
-    Title = "Target",
-    Values = { "Nearest", "Lowest HP", "Boss First" },
-    Default = "Nearest",
-})
-
-Farm:AddDropdown("Skills", {
-    Title = "Skills to use",
-    Values = { "Skill 1", "Skill 2", "Skill 3", "Ultimate" },
-    Multi = true,
-    Default = { "Skill 1", "Ultimate" },
-})
+Farm:AddDropdown("Target", { Title = "Target", Values = { "Nearest", "Lowest HP", "Boss First" }, Default = "Nearest" })
+Farm:AddDropdown("Skills", { Title = "Skills to use", Values = { "Skill 1", "Skill 2", "Ultimate" }, Multi = true, Default = { "Skill 1" } })
 ```
 
-- `Default` ใส่เป็นลำดับ เช่น `1` หรือใส่เป็นค่า เช่น `"Nearest"` ก็ได้
-- `Multi = true`: เลือกได้หลายอัน ค่าที่ได้จะเป็น `{ ["Skill 1"] = true, ["Ultimate"] = true }`
-- ถ้ามีมากกว่า 8 ตัวเลือก ในเมนูจะมีช่องค้นหาให้
-- `Options.Target:SetValues({...})`: เปลี่ยนรายการตัวเลือกใหม่ ถ้าค่าที่เลือกไว้ยังมีอยู่ในรายการใหม่ จะคงไว้ให้
+- `Default` ใส่เป็นลำดับ (`1`) หรือเป็นค่า (`"Nearest"`) ก็ได้
+- `Multi = true`: เลือกได้หลายอัน ค่าที่ได้เป็น `{ ["Skill 1"] = true }` ในเมนูมีปุ่ม All / Clear
+- มากกว่า 6 ตัวเลือก จะมีช่องกรอง
+- `Options.Target:SetValues({...})`: เปลี่ยนรายการ ถ้าค่าเดิมยังอยู่จะคงไว้ให้
+- `Images = { ["Nearest"] = "rbxassetid://..." }`: ใส่รูปหน้าตัวเลือก รูปโชว์ทั้งในเมนูและบนปุ่ม (เฉพาะแบบเลือกอันเดียว) เปลี่ยนทีหลังด้วย `Options.Target:SetImages({...})`
+
+### 🔀 Segment: ปุ่มเลือกแบบแท็บ
+
+```lua
+Farm:AddSegment("Mode", { Title = "Target", Values = { "Nearest", "Lowest HP", "Boss" }, Default = 1 })
+```
+
+กดง่ายกว่า Dropdown บนมือถือ มีแถบสีเด้งไปตามตัวที่เลือก
+
+### 🎨 Color Picker: เลือกสี
+
+```lua
+Visuals:AddColorPicker("EspColor", { Title = "ESP colour", Default = Color3.fromRGB(255, 60, 80) })
+```
+
+กดแล้วเปิดกล่องสี มีแถบ Hue และช่องพิมพ์ HEX ค่าที่ได้เป็น `Color3` (บันทึกเป็น `#RRGGBB`)
 
 ### ⌨️ Input: ช่องพิมพ์
 
 ```lua
-Farm:AddInput("StopFloor", {
-    Title = "Floor to stop at",
-    Numeric = true, Min = 1, Max = 1000,
-    Default = 200, Placeholder = "200",
-})
+Farm:AddInput("StopFloor", { Title = "Floor to stop at", Numeric = true, Min = 1, Max = 1000, Default = 200, Placeholder = "200" })
 ```
-
-- `Numeric = true`: รับแต่ตัวเลข และบีบค่าให้อยู่ในช่วง `Min`–`Max`
 
 ### 🖱️ Button: ปุ่มกด
 
 ```lua
-local Btn = Farm:AddButton({
-    Title = "Teleport to spawn",
-    Description = "Go back to where you started",
-    ButtonText = "Go",
-    Callback = function() end,
-})
+local Btn = Farm:AddButton({ Title = "Teleport to spawn", Description = "Go back to where you started", ButtonText = "Go", Callback = function() end })
 Btn:SetDesc("Done!")
 ```
 
@@ -194,43 +215,45 @@ Settings:AddKeybind({ Title = "Show / hide key", Default = Enum.KeyCode.RightCon
 
 ## 🎮 การ์ดสำเร็จรูป
 
-### Game Card: ข้อมูลเกม
-
-ดึงรูปเกม ชื่อเกม ชื่อผู้สร้าง และ ID ให้เอง ใส่ปุ่มได้ตามต้องการ
+### Stat Tiles: ตัวเลขสด 4 ช่อง
 
 ```lua
-local Game = Home:AddGameCard({
+Home:AddStatTiles()
+```
+
+- Playtime (`00:12:34.5`), Players, FPS และ Ping อัปเดตทุก 0.1 วินาที ตัวเลขวิ่งไหลไปหาค่าใหม่
+- FPS นับจากเฟรมจริงใน 1 วินาทีล่าสุด Ping อ่านจาก Data Ping ของ Roblox
+- ทำเองก็ได้: `Home:AddStatTiles({ Auto = false, Items = { { "kills", "Kills", "target" } } })` แล้ว `:Set("kills", 12)`
+
+### Map: การ์ดแมพ
+
+```lua
+local Map = Home:AddGameCard({
     Buttons = {
         { Title = "Rejoin", Callback = rejoin },
         { Title = "Server Hop", Callback = hop },
         { Title = "Leave Game", Callback = leave, Danger = true },
     },
 })
-Game:Set({ players = "12/22", ping = 56, pingColor = UI.Colors.Good })
 ```
 
-### Hero: สรุปการรันพร้อมแถบเปอร์เซ็นต์
+- แบนเนอร์รูปปกเกมจริงไล่จางไปทางซ้าย มีชื่อเกม ผู้สร้าง และแถว `SRV … / PlaceId` แตะเพื่อคัดลอก Job ID
+- มิเตอร์ PLAYERS / PING / UPTIME อัปเดตเอง
+- ปุ่มมีไอคอนตามชื่อ ปุ่ม `Danger = true` ต้องกดค้างเพื่อยืนยัน
+
+### Hero, Stats, Graph, Actions
 
 ```lua
 local Hero = Home:AddHero({ Title = "Current run" })
 Hero:Set({ main = "Wave 4", sub = "Shibuya", badge = "ACTIVE", badgeColor = UI.Colors.Good })
 Hero:SetBar(1, "Health", 82, UI.Colors.Good)
-Hero:SetBar(2, "Ultimate", 40, UI.Colors.Warn)
-```
 
-### Stats และ Graph: ตัวเลขกับกราฟ
-
-```lua
-local Stats = Home:AddStats({ { "fps", "Framerate" }, { "ping", "Latency" } })
+local Stats = Home:AddStats({ { "fps", "Framerate" } })
 Stats:Set("fps", 60, "Smooth", UI.Colors.Good)
 
 local Graph = Home:AddGraph({ Title = "Frame rate", Points = 40, Max = 60 })
 Graph:Push(UI.FPS, UI.FPS .. " FPS")
-```
 
-### Actions: ปุ่มลัด
-
-```lua
 Home:AddSection("Quick actions")
 Home:AddActions({
     { Title = "Auto Farm", Bind = "AutoFarm", OnText = "On - farming", OffText = "Off" },
@@ -238,31 +261,72 @@ Home:AddActions({
 })
 ```
 
-- ถ้าใส่ `Bind`: แถวนั้นจะเป็นสวิตช์ที่ผูกกับ Toggle ตัวที่มี id นั้น เปิดที่ไหนอีกฝั่งก็เปิดตาม
-- ถ้าไม่ใส่ `Bind`: แถวนั้นจะเป็นปุ่มกด
+`Bind` ทำให้แถวนั้นเป็นสวิตช์ที่ผูกกับ Toggle id นั้น ถ้าไม่ใส่จะเป็นปุ่ม
+
+### Themes: การ์ดเลือกธีม
+
+```lua
+Settings:AddThemePicker()
+```
+
+### Profiles: จัดการหลายชุดตั้งค่า
+
+```lua
+Settings:AddConfigManager()
+```
+
+ตั้งชื่อ บันทึก โหลด และลบโปรไฟล์ได้ (ต้องมี `listfiles` / `delfile` ใน executor)
 
 ---
 
 ## 🎛️ คุม UI จากโค้ด
 
 **หน้าต่าง**
-- `UI:ToggleUI()`: ซ่อนหรือแสดงหน้าต่าง
-- `UI:Destroy()`: ปิด UI ทั้งหมดและตัดทุก connection
-- `UI.Unloaded`: เป็น `true` หลังปิด UI ใช้เป็นเงื่อนไขหยุด loop
-- `UI.OnDestroy = function() end`: ฟังก์ชันที่จะทำงานหลัง UI ถูกปิด
+- `UI:ToggleUI()`: ซ่อน/แสดงหน้าต่าง (เล่นอนิเมชันหนังสือ)
+- `UI:SetMini(true)`: เข้า Mini mode
+- `UI:Destroy()`: ปิด UI ทั้งหมด ตัดทุก connection
+- `UI.Unloaded`: เป็น `true` หลังปิด UI
+- `UI.OnDestroy = function() end`: ทำงานหลัง UI ถูกปิด
 
-**หน้าตา**
-- `UI:SetAccent("Purple")`: เปลี่ยนสีหลัก มี Blue, Sky, Purple, Pink, Red, Orange, Green และ Teal ดูรายชื่อได้ที่ `UI.AccentNames`
-- `UI:SetGlass(true)`: พื้นหลังใส มองเห็นเกม ถ้าใส่ `false` จะเป็นพื้นทึบ
-- `UI:SetEffects(false)`: ปิดอนิเมชันกับเอฟเฟกต์ทั้งหมดเพื่อเพิ่ม FPS
-- `UI:SetStatusBar(false)`: ซ่อนแถบสถานะลอย
-- `UI:SetStatusScale(0.8)`: ย่อหรือขยายแถบสถานะ
-- `UI.StatusIgnore = { FreeMouse = true }`: กำหนด id ของ Toggle ที่ไม่ต้องนับใน `ACTIVE`
+**ธีมและหน้าตา**
+- `UI:SetTheme("Midnight")`: เปลี่ยนธีม ดูรายชื่อที่ `UI.ThemeOrder`
+- `UI:SetAccent("Red")`: เปลี่ยนเฉพาะสีหลัก ดูรายชื่อที่ `UI.AccentNames`
+- `UI:SetEffects(false)`: ปิดอนิเมชันและเอฟเฟกต์ทั้งหมดเพื่อเพิ่ม FPS
+
+**เสียง**
+
+เสียงเปิดอยู่ตั้งแต่เริ่ม ใช้เสียงป๊อปฟองสบู่ตัวเดียว (`rbxassetid://6895079853`) ปรับ pitch ให้ต่างกันในแต่ละการกระทำ เล่นผ่าน `PlayLocalSound` จึงได้ยินแค่เราคนเดียว
+
+| ชื่อเสียง | ดังตอนไหน |
+| --- | --- |
+| `click` | กดปุ่มต่างๆ กดปุ่มในการ์ด Map เข้า/ออก Mini mode |
+| `tab` | สลับหมวด |
+| `on` / `off` | เปิด/ปิด Toggle (รวมสวิตช์ใน Mini mode) และติ๊กตัวเลือกใน Dropdown แบบ Multi |
+| `tick` | ลาก Slider (ดังเบาๆ ทุกครั้งที่ค่าเปลี่ยน) |
+| `open` | เปิด Dropdown, Color Picker, ค้นหา |
+| `select` | เลือกตัวเลือกใน Dropdown, Segment, ธีม, ผลค้นหา |
+| `copy` | แตะแถว SRV เพื่อคัดลอก Job ID |
+| `alert` | กล่องถามยืนยัน และตอนกดค้างปุ่ม Danger จนครบ |
+| `notify` + `notify2` | แจ้งเตือนเด้งขึ้น และตอนหน้าทักทายขึ้น (ดัง 2 จังหวะ) |
+| `uiOpen` + `uiOpen2` | เปิดหน้าต่าง (พลิกหนังสือเปิด) และตอนออกจากหน้าทักทาย |
+| `uiClose` + `uiClose2` | ปิด/ซ่อนหน้าต่าง (พลิกหนังสือปิด) |
+| `whoosh` | เสียงลมตอนปกหนังสือพลิก |
+
+- `UI:SetSounds(false)`: ปิดเสียง UI ทั้งหมด (`true` เปิดกลับ)
+- `UI:SetVolume(0.5)`: ความดัง 0 ถึง 2 ค่าเริ่มต้น `0.5`
+- `UI:PlaySound("click")`: เล่นเสียงเองจากชื่อในตาราง ใส่ความดังเพิ่มได้ `UI:PlaySound("notify", 0.8)`
+- `UI.SoundOn` / `UI.Volume`: อ่านค่าปัจจุบัน
+- เสียงเดียวกันจะไม่ดังซ้ำถี่กว่า 0.05 วินาที กันเสียงรัวตอนลาก Slider
+
+```lua
+Settings:AddToggle("UISound", { Title = "UI sounds", Default = true, Callback = function(on) UI:SetSounds(on) end })
+Settings:AddSlider("UIVolume", { Title = "Volume", Min = 0, Max = 2, Default = 0.5, Rounding = 1, Callback = function(v) UI:SetVolume(v) end })
+```
 
 **แจ้งเตือนและถามยืนยัน**
 
 ```lua
-UI:Notify({ Title = "Saved", Content = "Config saved", Duration = 3 })
+UI:Notify({ Title = "Saved", Content = "Config saved", Duration = 3, Icon = "save", Group = "System" })
 
 UI:Confirm({
     Title = "Leave the game?",
@@ -272,29 +336,30 @@ UI:Confirm({
 })
 ```
 
+- แจ้งเตือนจัดกลุ่มตาม `Group` ถ้าไม่ใส่จะใช้ชื่อหมวดที่เปิดอยู่ ใส่ `Color` เปลี่ยนสีไอคอนได้
+
 **Config**
-- `UI:SaveConfig("config")`: บันทึกค่าทุกตัวเลือกลงไฟล์
-- `UI:LoadConfig("config")`: โหลดค่าจากไฟล์แล้วใส่ให้ทุกตัวเลือก
-- `UI:ReadConfig("config")`: อ่านไฟล์เป็น table โดยยังไม่ใส่ค่าให้
-- `UI:ApplyConfig(data)`: ใส่ค่าจาก table ให้ทุกตัวเลือก
-- `UI.AutoSave = true`: บันทึกเองทุกครั้งที่ค่าเปลี่ยน รอ 1 วินาทีก่อนบันทึก
-- ไฟล์จะอยู่ที่ `ConfigFolder/config.json` ขนาดและตำแหน่งของหน้าต่าง ปุ่มโลโก้ และแถบสถานะ ถูกบันทึกไปด้วย
+- `UI:SaveConfig("config")` / `UI:LoadConfig("config")`: บันทึก/โหลดทุกตัวเลือก
+- `UI:ReadConfig("config")` / `UI:ApplyConfig(data)`: อ่านเป็น table / ใส่ค่าจาก table
+- `UI.AutoSave = true`: บันทึกเองหลังค่าเปลี่ยน 1 วินาที
+- ไฟล์อยู่ที่ `ConfigFolder/config.json` เก็บทั้งค่าตัวเลือก ธีม สีหลัก ขนาดและตำแหน่งหน้าต่าง และตำแหน่งปุ่มลอย
+- **ธีมกับหน้าทักทาย:** ตอนรันครั้งใหม่ ธีมที่บันทึกไว้จะถูกใช้ก่อนสร้างทุกอย่าง หน้าทักทายและปกหนังสือจึงขึ้นมาเป็นสีธีมนั้นเลย (ต้องบันทึกหลังเปลี่ยนธีม: เปิด `AutoSave` หรือกดปุ่มบันทึก และใช้ `ConfigFolder` เดิม)
 
 **ค่าที่อ่านได้**
-- `UI.FPS`, `UI.Ping`: FPS และ ping เป็น ms อัปเดตทุกวินาที
+- `UI.FPS`, `UI.Ping`: อัปเดตทุก 0.1 วินาที
 - `UI.StartedAt`: เวลาที่เริ่มรัน เทียบกับ `os.clock()`
-- `UI.Colors`: สีของธีม เช่น `Text`, `Sub`, `Dim`, `Good`, `Warn`, `Bad`
-- `UI.Conns`: ใส่ connection ของคุณเข้าไป แล้วจะถูกตัดให้อัตโนมัติตอน `Destroy`
+- `UI.Colors`: สีของธีมปัจจุบัน เช่น `Text`, `Sub`, `Dim`, `Good`, `Warn`, `Bad`
+- `UI.Conns`: ใส่ connection ของคุณ แล้วจะถูกตัดตอน `Destroy`
+- `UI.Version`: เวอร์ชันไลบรารี (เห็นที่มุมขวาบนของปกหนังสือ และใน console)
 
 ---
 
 ## 📦 Options
 
-ทุก Toggle, Slider, Input และ Dropdown ที่ใส่ id จะเข้าไปอยู่ใน `UI.Options`
+ทุก Toggle, Slider, Input, Dropdown, Segment และ Color Picker ที่ใส่ id จะอยู่ใน `UI.Options`
 
 ```lua
 local Opt = UI.Options.AutoFarm
-
 print(Opt.Value)
 Opt:SetValue(true)
 Opt:OnChanged(function(v) print("now", v) end)
@@ -302,20 +367,20 @@ Opt.NoSave = true
 ```
 
 - `Value`: ค่าปัจจุบัน
-- `SetValue(v)`: ตั้งค่าจากโค้ด และ Callback จะทำงานด้วย
-- `OnChanged(fn)`: เพิ่มฟังก์ชันที่ทำงานทุกครั้งที่ค่าเปลี่ยน
-- `NoSave = true`: ไม่บันทึกค่านี้ลงไฟล์ config
+- `SetValue(v)`: ตั้งค่าจากโค้ด Callback จะทำงานด้วย
+- `OnChanged(fn)`: ทำงานทุกครั้งที่ค่าเปลี่ยน
+- `NoSave = true`: ไม่บันทึกค่านี้
 - `Values`, `SetValues(list)`: รายการตัวเลือกของ Dropdown
 
 ---
 
 ## 🎨 ไอคอน
 
-ใส่ชื่อไอคอนใน `Icon` ของ Tab
+ใส่ชื่อไอคอนใน `Icon` ของ Tab, Notify หรือปุ่มในการ์ด Map
 
-`home` · `swords` · `crosshair` · `shield` · `flag` · `play` · `list-checks` · `scroll` · `settings` · `user` · `git-branch` · `roll` · `evolution` · `bolt` · `flame` · `target` · `cart` · `gift` · `upgrade` · `tag` · `bag` · `cursor` · `run` · `cpu` · `people` · `clock` · `timer` · `trophy` · `palette` · `chart` · `info` · `sparkles`
+`home` · `swords` · `crosshair` · `shield` · `flag` · `play` · `list-checks` · `scroll` · `settings` · `user` · `git-branch` · `roll` · `evolution` · `bolt` · `flame` · `target` · `cart` · `gift` · `upgrade` · `tag` · `bag` · `cursor` · `run` · `cpu` · `people` · `clock` · `timer` · `trophy` · `palette` · `chart` · `info` · `sparkles` · `gamepad` · `refresh` · `shuffle` · `exit` · `copy` · `bars` · `power` · `warn` · `help` · `folder` · `save` · `search` · `check`
 
-ส่วนไอคอนบนการ์ด จะถูกเลือกให้เองจากชื่อ Section เช่น ชื่อที่มีคำว่า `Timing` ได้นาฬิกาจับเวลา, `Movement` ได้คนวิ่ง และ `Shop` ได้รถเข็น
+ไอคอนบนการ์ดจะถูกเลือกให้เองจากชื่อ Section เช่น `Timing` ได้นาฬิกาจับเวลา, `Movement` ได้คนวิ่ง
 
 ---
 
@@ -346,21 +411,16 @@ for _, p in ipairs(game.Players:GetPlayers()) do names[#names + 1] = p.Name end
 UI.Options.Target:SetValues(names)
 ```
 
-**ใส่ connection ให้ถูกตัดเองตอนปิด UI**
-
-```lua
-table.insert(UI.Conns, game:GetService("RunService").Heartbeat:Connect(function() end))
-```
-
 ---
 
 ## ❓ เจอปัญหา
 
-- **UI ไม่ขึ้นเลย:** ลองเปิดลิงก์ loadstring ในเบราว์เซอร์ ถ้าขึ้น 404 แปลว่าไฟล์บน GitHub ไม่ถูกชื่อหรือไม่อยู่ที่นั้น
+- **UI ไม่ขึ้นเลย:** เปิดลิงก์ loadstring ในเบราว์เซอร์ ถ้าขึ้น 404 แปลว่าชื่อไฟล์หรือที่อยู่ผิด ถ้าเห็นโค้ดที่ไม่ได้ขึ้นต้นด้วย `local Env = (getgenv and getgenv()) or _G` แปลว่าวางผิดไฟล์
+- **อัปโหลดแล้วยังเป็นเวอร์ชันเก่า:** GitHub แคชลิงก์ raw ไว้ประมาณ 5 นาที ถ้าอยากเทสทันที ใช้ลิงก์ที่ระบุ commit (`.../TEST1/<commit>/Test%2011`)
+- **ไฟล์กลับเป็นเวอร์ชันเก่าเอง:** VS Code ที่เปิดไฟล์ค้างไว้อาจบันทึกของเก่าทับ ให้ปิดแท็บแล้วเปิดใหม่ก่อนก๊อปทุกครั้ง
 - **มือถือกระตุก:** ปิดเอฟเฟกต์ด้วย `UI:SetEffects(false)`
-- **หน้าต่างเล็กหรือใหญ่ผิดปกติ:** ขนาดเก่าถูกบันทึกไว้ในไฟล์ config ลากมุมขวาล่างของหน้าต่างเพื่อปรับใหม่ หรือลบไฟล์ `config.json`
-- **แถบสถานะหายไป:** มันจะซ่อนเองตอนหน้าต่างหลักบังอยู่ ลองย้ายหน้าต่างลง หรือลากแถบไปไว้ที่อื่น
+- **หน้าต่างเล็กหรือใหญ่ผิดปกติ:** ลากมุมขวาล่างเพื่อปรับ หรือลบไฟล์ `config.json`
 
 ---
 
-Made with ⚡ by **Zero Hub** :)
+Made with ⚡ by **Zero Hub**
