@@ -2900,6 +2900,8 @@ local Library = (function()
                     local c
                     c = UIS.InputBegan:Connect(function(i)
                         if i.UserInputType ~= Enum.UserInputType.Keyboard then return end
+                        local fn = tonumber(i.KeyCode.Name:match("^F(%d+)$"))
+                        if fn and fn >= 13 then return end
                         c:Disconnect()
                         if i.KeyCode ~= Enum.KeyCode.Escape then Lib.ToggleKey = i.KeyCode end
                         b.Text = Lib.ToggleKey.Name
@@ -3645,6 +3647,8 @@ local Library = (function()
 
         connect(UIS.InputBegan, function(i, gp)
             if gp or Lib._binding then return end
+            local fn = tonumber(i.KeyCode.Name:match("^F(%d+)$"))
+            if fn and fn >= 13 then return end
             if i.KeyCode == Lib.ToggleKey then Lib:ToggleUI() end
         end)
 
